@@ -178,51 +178,55 @@ function handleDragOver(e) {
     e.preventDefault(); // Нужно для разрешения drop
 }
 
-async function handleDrop(e) {
+async function handleDrop(e, forcedContainer = null) {
     e.preventDefault();
 
     const taskId = e.dataTransfer.getData("taskId");
     const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
-    let dropTarget = e.target.closest('.task-wrap-container');
-    let newContainer = e.target.closest('.backlog-sprint-tusk-wrapper');
+    if (!taskElement) return;
 
-    // Если дропнули на пустую надпись
-    if (e.target.classList.contains('empty-backlog') || e.target.closest('.empty-backlog')) {
-        newContainer = e.target.closest('.backlog-sprint-tusk-wrapper');
-    }
-
+    // Находим контейнер для задач (исключая header)
+    let newContainer = forcedContainer || e.target.closest('.backlog-sprint-tusk-wrapper');
     if (!newContainer) return;
 
+    // Ищем конкретно область, куда можно добавлять задачи (исключая header и другие элементы)
+    const tasksArea = newContainer.querySelector('.create-task-btn-wrapper')?.parentElement;
+    if (!tasksArea) return;
+
+    const dropTarget = e.target.closest('.task-wrap-container');
     const sprintId = newContainer.dataset.sprintId || null;
 
     try {
         const response = await fetch('/update_task_location', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                taskId: taskId,
-                sprintId: sprintId
-            })
+            body: JSON.stringify({ taskId, sprintId })
         });
 
         if (!response.ok) throw new Error('Ошибка при обновлении задачи');
 
-        const createBtnWrapper = newContainer.querySelector('.create-task-btn-wrapper');
+        const createBtnWrapper = tasksArea.querySelector('.create-task-btn-wrapper');
+        const emptyBacklog = tasksArea.querySelector('.empty-backlog');
 
+        // Удаляем сообщение о пустом состоянии
+        emptyBacklog?.remove();
+
+        // Вставляем задачу в правильное место
         if (dropTarget && dropTarget !== taskElement) {
-            newContainer.insertBefore(taskElement, dropTarget);
+            tasksArea.insertBefore(taskElement, dropTarget);
         } else if (createBtnWrapper) {
-            newContainer.insertBefore(taskElement, createBtnWrapper);
+            tasksArea.insertBefore(taskElement, createBtnWrapper);
         } else {
-            newContainer.appendChild(taskElement);
+            tasksArea.appendChild(taskElement);
         }
 
-        const emptyBacklog = newContainer.querySelector('.empty-backlog');
-        if (emptyBacklog) emptyBacklog.remove();
     } catch (err) {
         console.error('Ошибка при перемещении задачи:', err);
+        // Можно добавить уведомление для пользователя
     }
 }
+
+
 
 function initDragOverHandlers() {
     const containers = document.querySelectorAll('.backlog-sprint-tusk-wrapper');
@@ -236,12 +240,24 @@ function initDragOverHandlers() {
             e.preventDefault();
         });
 
-        container.addEventListener('drop', handleDrop);
+        container.addEventListener('drop', (e) => {
+            e.preventDefault();
+        });
+
+
+        // ВАЖНО: делаем кликабельными даже пустые зоны
+        container.querySelectorAll('.empty-backlog').forEach(el => {
+            el.addEventListener('dragover', (e) => {
+                e.preventDefault();
+            });
+            el.addEventListener('drop', handleDrop);
+        });
     });
 }
 
 
-initDragOverHandlers();
+
+window.addEventListener('DOMContentLoaded', initDragOverHandlers);
 
 
 

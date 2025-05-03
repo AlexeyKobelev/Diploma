@@ -35,11 +35,6 @@ public class TaskController {
         return taskService.getBackLogTasksByProjectId(projectId);
     }
 
-//    @GetMapping("/backlog_tasks")
-//    public List<TaskEntity> getBacklogTasks(@PathVariable Long projectId) {
-//        return taskService.getBackLogTasksByProjectId(projectId);
-//    }
-
 
     @GetMapping("/sprint_tasks/backlog/{sprintId}")
     public List<TaskDTO> getTasksBySprintId(@PathVariable Long sprintId) {
