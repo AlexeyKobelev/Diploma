@@ -32,6 +32,7 @@ public class TaskServiceImpl implements TaskService {
         task.setTitle(request.getTitle());
         task.setTaskType(request.getTask_type());
         task.setTaskKey(keyGenerator(request));
+        task.setStatus(request.getStatus());
         if (request.getSprintId() != null) {
             SprintEntity sprint = sprintService.getSprintById(request.getSprintId());
             task.setSprint(sprint);
@@ -104,6 +105,9 @@ public class TaskServiceImpl implements TaskService {
 
         task.setStatus(status);
         taskRepository.save(task);
+    }
+    public List<TaskEntity> searchTasksInSprint(String query, Long projectId, Long sprintId) {
+        return taskRepository.searchInSprint(query, projectId, sprintId);
     }
 }
 
