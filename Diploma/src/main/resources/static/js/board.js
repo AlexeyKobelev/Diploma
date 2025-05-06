@@ -38,11 +38,13 @@ function initKanbanDragAndDrop() {
                 container.insertBefore(taskElement, dropTarget);
             }
 
+            console.log(newStatus);
+
             try {
-                const response = await fetch('/update_status', {
+                const response = await fetch(`/update_status/${taskId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ taskId, status: newStatus })
+                    body: JSON.stringify({ taskId, statusName: newStatus })
                 });
 
                 if (!response.ok) throw new Error('Ошибка при обновлении статуса');
@@ -75,18 +77,27 @@ async function loadActiveSprint(projectId) {
         }
         const sprintData = await response.json();
         const { tasks } = sprintData;
+        console.log("Задачи из API:", tasks);
+
+        // Очищаем все колонки перед загрузкой новых задач
+        document.querySelectorAll('.kanban-column .tusk-container').forEach(container => {
+            container.querySelectorAll('.task-content').forEach(task => task.remove());
+        });
 
         // Колонки по статусу задачи
         const columnMap = {
-            'К выполнению': '.kanban-column:first-child .tusk-container',
+            'К выполнению': '.kanban-column:nth-child(1) .tusk-container',
             'В работе': '.kanban-column:nth-child(2) .tusk-container',
             'Выполнено': '.kanban-column:nth-child(3) .tusk-container'
         };
 
         tasks.forEach(task => {
+            if (!task.taskStatus) {
+                console.warn('У задачи отсутствует статус:', task);
+                return;
+            }
+
             const icon = iconMap[task.taskType] || 'icons/tusk.svg';
-            const statusColumn = task.status; // Предполагаем, что статус хранится в поле task.status
-            if (!task.status) return;
             const taskContentHTML = `
                 <div class="task-content" draggable="true" data-task-id="${task.id}">
                     <div class="task-name">
@@ -108,17 +119,39 @@ async function loadActiveSprint(projectId) {
             taskContainer.innerHTML = taskContentHTML;
 
             // Находим колонку по статусу задачи
-            const kanbanColumn = document.querySelector(columnMap[statusColumn]);
+            const columnSelector = columnMap[task.taskStatus.status.name];
+            if (!columnSelector) {
+                console.warn(`Не найден селектор для статуса: ${task.taskStatus.status.name}`);
+                return;
+            }
+
+            const kanbanColumn = document.querySelector(columnSelector);
+            if (!kanbanColumn) {
+                console.warn(`Колонка для статуса ${task.taskStatus} не найдена`);
+                return;
+            }
+
+            // Пытаемся найти кнопку добавления
             const addButton = kanbanColumn.querySelector('.add-task-btn');
-            kanbanColumn.insertBefore(taskContainer.firstElementChild, addButton);
-            const taskElement = kanbanColumn.querySelector(`[data-task-id="${task.id}"]`);
+            const taskElement = taskContainer.firstElementChild;
+
+            if (addButton) {
+                kanbanColumn.insertBefore(taskElement, addButton);
+            } else {
+                // Если кнопки нет, просто добавляем в конец колонки
+                kanbanColumn.appendChild(taskElement);
+            }
+
+            // Добавляем обработчик перетаскивания
             taskElement.addEventListener("dragstart", handleDragStart);
         });
+
+        // Инициализируем drag and drop после загрузки задач
+        initKanbanDragAndDrop();
     } catch (err) {
         console.error('Ошибка при загрузке активного спринта:', err);
     }
 }
-
 
 function getProjectIdFromUrl() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -276,7 +309,7 @@ document.addEventListener("click", (e) => {
             return;
         }
 
-        const status = column.querySelector(".kanban-column-name").textContent.trim();
+        const taskStatus = column.querySelector(".kanban-column-name").textContent.trim();
         const projectId = getProjectIdFromUrl();
 
         const sprintRes = await fetch(`/api/sprint/active/${projectId}`);
@@ -292,7 +325,7 @@ document.addEventListener("click", (e) => {
             task_type: taskType,
             sprintId: sprint.id,
             projectId: projectId,
-            status: status
+            taskStatus: taskStatus
         };
 
         const createRes = await fetch("/create_task", {
@@ -432,7 +465,7 @@ function renderSearchResults(tasks) {
     tasks.forEach(task => {
         const column = [...columns].find(col => {
             const name = col.querySelector(".kanban-column-name").textContent.trim();
-            return name === task.status;
+            return name === task.taskStatus;
         });
 
         if (!column) return;
@@ -475,6 +508,63 @@ function renderSearchResults(tasks) {
         column.querySelector(".tusk-container").insertBefore(taskElement.firstElementChild, addButton);
     });
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+    const kanbanInner = document.querySelector(".kanban-inner");
+    const createColumnBtn = document.querySelector(".create-column");
+
+    const projectId = new URLSearchParams(window.location.search).get("id");
+
+    // Загрузка столбцов при загрузке страницы
+    fetch(`/api/project/status/${projectId}`)
+        .then(res => res.json())
+        .then(columns => {
+            if (columns.length === 0) {
+                const defaultTitles = ["К выполнению", "В процессе", "Готово"];
+                defaultTitles.forEach(title => createColumn(title));
+            } else {
+                columns.forEach(col => renderColumn(col));
+            }
+        })
+        .catch(err => console.error("Ошибка загрузки столбцов:", err));
+
+    // Кнопка "плюс" для создания новой колонки
+    createColumnBtn.addEventListener("click", () => {
+        const title = prompt("Введите название нового столбца:");
+        if (title) {
+            createColumn(title);
+        }
+    });
+
+    // Создание колонки на сервере и отрисовка
+    function createColumn(title) {
+        fetch("/createCustomStatus", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({name: title, projectId })
+        })
+            .then(res => res.json())
+            .then(col => renderColumn(col))
+            .catch(err => console.error("Ошибка создания колонки:", err));
+    }
+
+    // Отрисовка колонки
+    function renderColumn(col) {
+        const colDiv = document.createElement("div");
+        colDiv.classList.add("kanban-column");
+        colDiv.innerHTML = `
+      <div class="kanban-column-name">
+           <span>${col.status.name}</span>
+      </div>
+      <div class="tusk-container">
+        <button class="add-task-btn on-board">+  Добавить задачу</button>
+      </div>
+
+    `;
+        kanbanInner.insertBefore(colDiv, document.querySelector(".create-column-container"));
+    }
+});
+
 
 // Длительность спринта
 function startSprintCountdownDisplay(startDateStr, durationInDays) {

@@ -47,7 +47,7 @@ public class TaskController {
                         task.getSprint() != null ? task.getSprint().getId() : null,
                         task.getTaskKey(),
                         task.getTaskType(),
-                        task.getStatus()
+                        task.getTaskStatus()
                 ))
                 .collect(Collectors.toList());
     }
@@ -61,9 +61,9 @@ public class TaskController {
         }
 
     }
-    @PostMapping("/update_status")
-    public ResponseEntity<?> updateStatus(@RequestBody TaskStatusUpdateRequest request) {
-        taskService.updateStatus(request.getTaskId(), request.getStatus());
+    @PostMapping("/update_status/{taskId}")
+    public ResponseEntity<?> updateStatus(@PathVariable Long taskId, @RequestBody TaskStatusUpdateRequest request) {
+        taskService.updateStatus(taskId, request.getStatusName());
         return ResponseEntity.ok().build();
     }
     @GetMapping("/api/sprint/{sprintId}/search")
@@ -85,9 +85,9 @@ public class TaskController {
                         task.getId(),
                         task.getTitle(),
                         task.getSprint() != null ? task.getSprint().getId() : null,
-                        task.getStatus(),
                         task.getTaskKey(),
-                        task.getTaskType()
+                        task.getTaskType(),
+                        task.getTaskStatus()
                 ))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(taskDTOs);

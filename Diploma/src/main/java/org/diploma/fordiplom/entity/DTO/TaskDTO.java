@@ -1,5 +1,6 @@
 package org.diploma.fordiplom.entity.DTO;
 
+import org.diploma.fordiplom.entity.ProjectStatusEntity;
 import org.diploma.fordiplom.entity.TaskEntity;
 
 public class TaskDTO {
@@ -7,8 +8,9 @@ public class TaskDTO {
     private String title;
     private Long sprintId;
     private String taskType;
-    private String Status;
     private String taskKey;
+
+    private ProjectStatusEntity taskStatus;
 
     public String getTaskType() {
         return taskType;
@@ -26,13 +28,13 @@ public class TaskDTO {
         this.taskKey = taskKey;
     }
 
-    public TaskDTO(Long id, String title, Long sprintId, String taskKey, String taskType, String status) {
+    public TaskDTO(Long id, String title, Long sprintId, String taskKey, String taskType, ProjectStatusEntity taskStatus) {
         this.id = id;
         this.title = title;
         this.sprintId = sprintId;
         this.taskKey = taskKey;
         this.taskType = taskType;
-        this.Status = status;
+        this.taskStatus = taskStatus;
     }
 
     public Long getId() {
@@ -59,11 +61,11 @@ public class TaskDTO {
         this.sprintId = sprintId;
     }
 
-    public String getStatus() {
-        return Status;
+    public ProjectStatusEntity getTaskStatus() {
+        return taskStatus;
     }
 
-    public void setStatus(String status) {
-        Status = status;
+    public void setTaskStatus(ProjectStatusEntity taskStatus) {
+        this.taskStatus = taskStatus;
     }
 }

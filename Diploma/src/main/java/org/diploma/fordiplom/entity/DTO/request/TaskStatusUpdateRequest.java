@@ -1,22 +1,15 @@
 package org.diploma.fordiplom.entity.DTO.request;
 
+import org.diploma.fordiplom.entity.ProjectStatusEntity;
+
 public class TaskStatusUpdateRequest {
-    private Long taskId;
-    private String status;
+    private String statusName;
 
-    public Long getTaskId() {
-        return taskId;
+    public String getStatusName() {
+        return statusName;
     }
 
-    public void setTaskId(Long taskId) {
-        this.taskId = taskId;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
+    public void setStatusName(String statusName) {
+        this.statusName = statusName;
     }
 }
