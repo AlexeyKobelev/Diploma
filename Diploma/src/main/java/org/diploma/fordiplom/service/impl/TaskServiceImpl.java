@@ -2,10 +2,14 @@ package org.diploma.fordiplom.service.impl;
 
 
 import org.diploma.fordiplom.entity.DTO.request.TaskRequest;
+import org.diploma.fordiplom.entity.ProjectStatusEntity;
 import org.diploma.fordiplom.entity.SprintEntity;
 import org.diploma.fordiplom.entity.TaskEntity;
+import org.diploma.fordiplom.entity.TaskStatusEntity;
+import org.diploma.fordiplom.repository.ProjectStatusRepository;
 import org.diploma.fordiplom.repository.SprintRepository;
 import org.diploma.fordiplom.repository.TaskRepository;
+import org.diploma.fordiplom.repository.TaskStatusRepository;
 import org.diploma.fordiplom.service.ProjectService;
 import org.diploma.fordiplom.service.SprintService;
 import org.diploma.fordiplom.service.TaskService;
@@ -25,6 +29,10 @@ public class TaskServiceImpl implements TaskService {
     private ProjectService projectService;
     @Autowired
     private SprintRepository sprintRepository;
+    @Autowired
+    private TaskStatusRepository taskStatusRepository;
+    @Autowired
+    private ProjectStatusRepository projectStatusRepository;
 
     @Override
     public TaskEntity createTask(TaskRequest request){
@@ -32,6 +40,7 @@ public class TaskServiceImpl implements TaskService {
         task.setTitle(request.getTitle());
         task.setTaskType(request.getTask_type());
         task.setTaskKey(keyGenerator(request));
+        //task.setStatus(request.getStatus());
         if (request.getSprintId() != null) {
             SprintEntity sprint = sprintService.getSprintById(request.getSprintId());
             task.setSprint(sprint);
@@ -96,5 +105,29 @@ public class TaskServiceImpl implements TaskService {
 
         taskRepository.save(task); // Сохраняем обновлённую задачу
     }
+
+    @Override
+    public TaskEntity updateStatus(Long taskId, String statusName) {
+        // Находим задачу
+        TaskEntity task = taskRepository.findById(taskId)
+                .orElse(null);
+
+        // Находим базовый статус по имени
+        TaskStatusEntity baseStatus = taskStatusRepository.findByName(statusName)
+                .orElse(null);
+
+        // Находим связку статуса с проектом
+        ProjectStatusEntity newStatus = projectStatusRepository
+                .findByProject_IdAndStatusId(task.getProject().getId(), baseStatus.getId())
+                .orElse(null);
+
+        // Обновляем статус
+        task.setTaskStatus(newStatus);
+
+        return taskRepository.save(task);
     }
 
+    public List<TaskEntity> searchTasksInSprint(String query, Long projectId, Long sprintId) {
+        return taskRepository.searchInSprint(query, projectId, sprintId);
+    }
+}

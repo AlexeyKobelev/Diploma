@@ -2,11 +2,7 @@
 async function startSprint(button) {
     const sprintWrapper = button.closest('.backlog-sprint-tusk-wrapper');
     const sprintId = sprintWrapper.dataset.sprintId;
-    const iconMap = {
-        task: 'icons/tusk.svg',
-        story: 'icons/history.svg',
-        bug: 'icons/bug.svg'
-    };
+    const { projectId } = getProjectIdAndSectionFromUrl();
 
     try {
         const response = await fetch(`/api/sprint/${sprintId}/start`, {
@@ -15,53 +11,18 @@ async function startSprint(button) {
 
         if (!response.ok) {
             throw new Error('Не удалось запустить спринт');
-
         }
-
-        const kanbanTodoColumn = document.querySelector('.kanban .kanban-column:first-child .tusk-container');
-        const tasks = sprintWrapper.querySelectorAll('.task-wrap-container');
-
-        tasks.forEach(task => {
-            const taskType = task.querySelector('.task-type')?.src.includes('history') ? 'story' :
-                task.querySelector('.task-type')?.src.includes('bug') ? 'bug' : 'task';
-            const icon = iconMap[taskType] || 'icons/tusk.svg';
-            const taskKey = task.querySelector('.key')?.textContent || '';
-            const taskTitle = task.querySelector('.tusk-name')?.textContent || '';
-
-            const taskContentHTML = `
-                <div class="task-content">
-                    <div class="task-name">
-                        <span class="task-title">${taskTitle}</span>
-                    </div>
-                    <div class="tusk-bottom">
-                        <div class="tag-and-key">
-                            <img class="tag" src="${icon}">
-                            <span class="task-id">${taskKey}</span>
-                        </div>
-                        <button>
-                            <img class="performer" src="/icons/Group%205.svg">
-                        </button>
-                    </div>
-                </div>
-            `;
-
-            // Создаём контейнер задачи и вставляем в колонку
-            const taskContainer = document.createElement('div');
-            taskContainer.innerHTML = taskContentHTML;
-            kanbanTodoColumn.appendChild(taskContainer.firstElementChild);
-        });
 
         // Удаляем спринт из бэклога
         sprintWrapper.remove();
 
-        // Переключаем отображение
-        document.getElementById('backlog').classList.remove('active-section');
-        document.getElementById('board').classList.add('active-section');
-
+        // Перенаправляем на страницу доски
+        window.location.href = `/project_page?id=${projectId}&section=board`;
     } catch (err) {
         console.error('Ошибка при запуске спринта:', err);
     }
 }
+
 
 
 // Логика для Drag-and-drop
@@ -217,51 +178,55 @@ function handleDragOver(e) {
     e.preventDefault(); // Нужно для разрешения drop
 }
 
-async function handleDrop(e) {
+async function handleDrop(e, forcedContainer = null) {
     e.preventDefault();
 
     const taskId = e.dataTransfer.getData("taskId");
     const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
-    let dropTarget = e.target.closest('.task-wrap-container');
-    let newContainer = e.target.closest('.backlog-sprint-tusk-wrapper');
+    if (!taskElement) return;
 
-    // Если дропнули на пустую надпись
-    if (e.target.classList.contains('empty-backlog') || e.target.closest('.empty-backlog')) {
-        newContainer = e.target.closest('.backlog-sprint-tusk-wrapper');
-    }
-
+    // Находим контейнер для задач (исключая header)
+    let newContainer = forcedContainer || e.target.closest('.backlog-sprint-tusk-wrapper');
     if (!newContainer) return;
 
+    // Ищем конкретно область, куда можно добавлять задачи (исключая header и другие элементы)
+    const tasksArea = newContainer.querySelector('.create-task-btn-wrapper')?.parentElement;
+    if (!tasksArea) return;
+
+    const dropTarget = e.target.closest('.task-wrap-container');
     const sprintId = newContainer.dataset.sprintId || null;
 
     try {
         const response = await fetch('/update_task_location', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                taskId: taskId,
-                sprintId: sprintId
-            })
+            body: JSON.stringify({ taskId, sprintId })
         });
 
         if (!response.ok) throw new Error('Ошибка при обновлении задачи');
 
-        const createBtnWrapper = newContainer.querySelector('.create-task-btn-wrapper');
+        const createBtnWrapper = tasksArea.querySelector('.create-task-btn-wrapper');
+        const emptyBacklog = tasksArea.querySelector('.empty-backlog');
 
+        // Удаляем сообщение о пустом состоянии
+        emptyBacklog?.remove();
+
+        // Вставляем задачу в правильное место
         if (dropTarget && dropTarget !== taskElement) {
-            newContainer.insertBefore(taskElement, dropTarget);
+            tasksArea.insertBefore(taskElement, dropTarget);
         } else if (createBtnWrapper) {
-            newContainer.insertBefore(taskElement, createBtnWrapper);
+            tasksArea.insertBefore(taskElement, createBtnWrapper);
         } else {
-            newContainer.appendChild(taskElement);
+            tasksArea.appendChild(taskElement);
         }
 
-        const emptyBacklog = newContainer.querySelector('.empty-backlog');
-        if (emptyBacklog) emptyBacklog.remove();
     } catch (err) {
         console.error('Ошибка при перемещении задачи:', err);
+        // Можно добавить уведомление для пользователя
     }
 }
+
+
 
 function initDragOverHandlers() {
     const containers = document.querySelectorAll('.backlog-sprint-tusk-wrapper');
@@ -275,12 +240,24 @@ function initDragOverHandlers() {
             e.preventDefault();
         });
 
-        container.addEventListener('drop', handleDrop);
+        container.addEventListener('drop', (e) => {
+            e.preventDefault();
+        });
+
+
+        // ВАЖНО: делаем кликабельными даже пустые зоны
+        container.querySelectorAll('.empty-backlog').forEach(el => {
+            el.addEventListener('dragover', (e) => {
+                e.preventDefault();
+            });
+            el.addEventListener('drop', handleDrop);
+        });
     });
 }
 
 
-initDragOverHandlers();
+
+window.addEventListener('DOMContentLoaded', initDragOverHandlers);
 
 
 
@@ -354,43 +331,6 @@ function initCreateTaskButtons(scope = document) {
 document.addEventListener("DOMContentLoaded", () => {
     initCreateTaskButtons();
 })
-
-async function loadProjectData() {
-    const projectId = getProjectIdFromUrl();
-    if (!projectId) {
-        document.getElementById("project-title").textContent = "Проект не найден";
-        return;
-    }
-
-    try {
-        const response = await fetch(`/api/project/${projectId}`);
-        if (!response.ok) throw new Error("Проект не найден");
-
-        const project = await response.json();
-        document.getElementById("project-title").textContent = project.name;
-    } catch (err) {
-        console.error(err);
-        document.getElementById("project-title").textContent = "Ошибка загрузки проекта";
-    }
-}
-
-window.addEventListener("DOMContentLoaded", loadProjectData);
-
-const navLinks = document.querySelectorAll('.nav-link');
-const sections = document.querySelectorAll('.section');
-
-navLinks.forEach(link => {
-    link.addEventListener('click', (e) => {
-        e.preventDefault();
-
-        navLinks.forEach(l => l.classList.remove('active'));
-        link.classList.add('active');
-
-        const sectionId = link.dataset.section;
-        sections.forEach(sec => sec.classList.remove('active-section'));
-        document.getElementById(sectionId).classList.add('active-section');
-    });
-});
 
 function openModal() {
     document.getElementById("sprintModal").style.display = "block";
@@ -470,7 +410,35 @@ document.addEventListener("DOMContentLoaded", function () {
     window.projectIdFromURL = projectId;
     loadSprints(projectId); // теперь projectId корректный
 });
+async function loadSprints(projectId) {
+    try {
+        const response = await fetch(`/api/project/${projectId}/sprints`);
+        if (!response.ok) throw new Error("Ошибка загрузки спринтов");
 
+        const sprints = await response.json();
+        const container = document.querySelector('.scrollable-backlog-container');
+
+        // Находим элемент бэклога (последний .backlog-sprint-tusk-wrapper в контейнере)
+        const backlogElement = container.querySelector('.backlog-sprint-tusk-wrapper:last-child');
+
+        sprints.forEach(sprint => {
+            const sprintElement = renderSprint(sprint);
+
+            // Вставляем перед бэклогом
+            if (backlogElement) {
+                container.insertBefore(sprintElement, backlogElement);
+            } else {
+                container.appendChild(sprintElement); // fallback
+            }
+        });
+
+        initCreateTaskButtons(container);
+        initTaskInputHandlers()
+
+    } catch (err) {
+        console.error("Ошибка при загрузке спринтов:", err);
+    }
+}
 function updateDatesFromDuration() {
     const duration = document.getElementById("sprintDuration").value;
     const startInput = document.getElementById("startDate");
@@ -519,9 +487,15 @@ function renderSprint(sprint) {
         </div>
       </div>
       <div class="sprint-btns">
-        <button class="edit-sprint-btn">
-          <img src="/icons/pepicons-pencil_dots-x.svg">
-        </button>
+        <div class="edit-sprint-wrapper">
+      <button class="edit-sprint-btn">
+        <img src="/icons/pepicons-pencil_dots-x.svg">
+      </button>
+      <div class="dropdown-menu-sprint" style="display: none;">
+        <button class="edit-sprint">Изменить спринт</button>
+        <button class="delete-sprint">Удалить спринт</button>
+      </div>
+    </div>
         <button class="start-project-btn" style="margin-right: 0px" onclick="startSprint(this)">Начать спринт</button>
       </div>
     </div>
@@ -571,45 +545,17 @@ function renderSprint(sprint) {
   `;
     return container;
 }
-
-async function loadSprints(projectId) {
-    try {
-        const response = await fetch(`/api/project/${projectId}/sprints`);
-        if (!response.ok) throw new Error("Ошибка загрузки спринтов");
-
-        const sprints = await response.json();
-        const container = document.querySelector('.scrollable-backlog-container');
-
-        // Находим элемент бэклога (последний .backlog-sprint-tusk-wrapper в контейнере)
-        const backlogElement = container.querySelector('.backlog-sprint-tusk-wrapper:last-child');
-
-        sprints.forEach(sprint => {
-            const sprintElement = renderSprint(sprint);
-
-            // Вставляем перед бэклогом
-            if (backlogElement) {
-                container.insertBefore(sprintElement, backlogElement);
-            } else {
-                container.appendChild(sprintElement); // fallback
-            }
-        });
-
-        initCreateTaskButtons(container);
-        initTaskInputHandlers()
-
-    } catch (err) {
-        console.error("Ошибка при загрузке спринтов:", err);
-    }
-}
 function getProjectIdFromUrl() {
     const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('id');
+    const fullId = urlParams.get('id');
+    return fullId ? fullId.split('/')[0] : null;
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const projectId = getProjectIdFromUrl();
-        const response = await fetch(`/api/project/${projectId}/backlog_tasks`);
+        const response = await fetch(`/api/project/${projectId}/backlog/backlog_tasks`);
+        console.log(response)
         if (!response.ok) throw new Error('Ошибка при получении задач');
 
         const tasks = await response.json();
@@ -621,7 +567,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const sprintElements = document.querySelectorAll('.backlog-sprint-tusk-wrapper[data-sprint-id]');
         for (const sprintElement of sprintElements) {
             const sprintId = sprintElement.getAttribute('data-sprint-id');
-            const response = await fetch(`/sprint_tasks/${sprintId}`);
+            const response = await fetch(`/sprint_tasks/backlog/${sprintId}`);
             if (!response.ok) throw new Error(`Ошибка при получении задач для спринта ${sprintId}`);
             const tasks = await response.json();
             tasks.forEach(task => renderTaskToSprint(task, sprintElement));
@@ -640,3 +586,96 @@ const formatDate = (dateStr) => {
 };
 const backlog = document.querySelector('.scrollable-backlog-container');
 initCreateTaskButtons(backlog);
+
+
+// Sprint delete/edit
+document.addEventListener('click', function(event) {
+    if (event.target.closest('.edit-sprint-btn')) {
+        const btn = event.target.closest('.edit-sprint-btn');
+        const menu = btn.nextElementSibling;
+
+        if (menu && menu.classList.contains('dropdown-menu-sprint')) {
+            document.querySelectorAll('.dropdown-menu-sprint').forEach(m => m.style.display = 'none');
+            menu.style.display = 'block';
+        }
+        event.stopPropagation();
+    } else if (event.target.closest('.edit-sprint')) {
+        const sprintElement = event.target.closest('.backlog-sprint-tusk-wrapper'); // родительский блок спринта
+        const sprintId = sprintElement.querySelector('#sprintId').value; // или где ты хранишь ID
+
+        openEditSprintModal(sprintId);
+        event.stopPropagation();
+    } else {
+        document.querySelectorAll('.dropdown-menu-sprint').forEach(m => m.style.display = 'none');
+    }
+});
+function openEditSprintModal(sprintId) {
+    fetch(`/api/sprint/${sprintId}`)  // сделай GET-метод на сервере, чтобы получить спринт по id
+        .then(response => {
+            if (!response.ok) throw new Error('Ошибка загрузки спринта');
+            return response.json();
+        })
+        .then(data => {
+            document.getElementById("sprintModal").style.display = "block";
+
+            // заполняем поля
+            document.getElementById("sprintName").value = data.sprintName || '';
+            document.getElementById("sprintDuration").value = data.duration || 'custom';
+            document.getElementById("startDate").value = data.startDate ? data.startDate.slice(0, 16) : '';
+            document.getElementById("endDate").value = data.endDate ? data.endDate.slice(0, 16) : '';
+            document.getElementById("sprintGoal").value = data.goal || '';
+            document.getElementById("projectId").value = data.project.id;
+            document.getElementById("sprintId").value = data.id;
+
+            // меняем текст кнопки
+            const submitButton = document.querySelector('.submit-btn');
+            submitButton.textContent = 'Обновить';
+            submitButton.onclick = updateSprint; // теперь будет другая функция
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Не удалось загрузить спринт');
+        });
+}
+function updateSprint() {
+    const sprintId = document.getElementById('sprintId').value;
+    const sprintName = document.getElementById('sprintName').value.trim();
+
+    if (!sprintName) {
+        alert('Название спринта обязательно');
+        return;
+    }
+
+    const durationValue = document.getElementById('sprintDuration').value;
+    const duration = durationValue === "custom" ? null : parseInt(durationValue);
+
+    const sprint = {
+        sprintName: sprintName,
+        duration: duration,
+        startDate: document.getElementById('startDate').value,
+        endDate: document.getElementById('endDate').value,
+        goal: document.getElementById('sprintGoal').value
+    };
+
+    fetch(`/api/sprint/${sprintId}/update`, {
+        method: 'PUT',
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(sprint)
+    })
+        .then(response => {
+            if (!response.ok) throw new Error('Ошибка обновления спринта');
+            return response.json();
+        })
+        .then(data => {
+            console.log('Спринт обновлён:', data);
+            location.reload(); // временно, перезагружаем страницу чтобы увидеть изменения
+            closeModal();
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Не удалось обновить спринт');
+        });
+}
+

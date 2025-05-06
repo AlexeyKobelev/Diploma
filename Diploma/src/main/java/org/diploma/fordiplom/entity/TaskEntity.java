@@ -39,10 +39,6 @@ public class TaskEntity {
     private String taskType;
     @Column(name="task_key")
     private String taskKey;
-    @Size(max = 50)
-    @Column(name = "status", length = 50)
-    private String status;
-
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "created_at")
     private Instant createdAt;
@@ -55,11 +51,15 @@ public class TaskEntity {
     @JoinColumn(name = "assigned_user_id")
     private UserEntity assignedUser;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sprint_id")
     private SprintEntity sprint;
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "project_id")
     private ProjectEntity project;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "status_id")
+    private ProjectStatusEntity taskStatus;
 
 }

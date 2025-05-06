@@ -2,9 +2,11 @@ package org.diploma.fordiplom.service.impl;
 
 import jakarta.persistence.EntityNotFoundException;
 import org.diploma.fordiplom.entity.ProjectEntity;
+import org.diploma.fordiplom.entity.ProjectStatusEntity;
 import org.diploma.fordiplom.entity.UserEntity;
 import org.diploma.fordiplom.repository.ProjectRepository;
 import org.diploma.fordiplom.service.ProjectService;
+import org.diploma.fordiplom.service.StatusService;
 import org.diploma.fordiplom.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,8 @@ public class ProjectServiceImpl implements ProjectService {
     private ProjectRepository projectRepository;
     @Autowired
     private UserService userService;
+    @Autowired
+    private StatusService statusService;
 
     private ProjectEntity projectEntity;
 

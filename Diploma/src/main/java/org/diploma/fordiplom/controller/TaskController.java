@@ -5,6 +5,7 @@ import org.diploma.fordiplom.entity.DTO.TaskDTO;
 import org.diploma.fordiplom.entity.DTO.request.SprintRequest;
 import org.diploma.fordiplom.entity.DTO.request.TaskLocationUpdateRequest;
 import org.diploma.fordiplom.entity.DTO.request.TaskRequest;
+import org.diploma.fordiplom.entity.DTO.request.TaskStatusUpdateRequest;
 import org.diploma.fordiplom.entity.SprintEntity;
 import org.diploma.fordiplom.entity.TaskEntity;
 import org.diploma.fordiplom.service.SprintService;
@@ -29,18 +30,13 @@ public class TaskController {
     }
 
 
-    @GetMapping("/api/project/{projectId}/backlog_tasks")
+    @GetMapping("/api/project/{projectId}/backlog/backlog_tasks")
     public List<TaskEntity> getBacklogTasks(@PathVariable Long projectId) {
         return taskService.getBackLogTasksByProjectId(projectId);
     }
 
-//    @GetMapping("/backlog_tasks")
-//    public List<TaskEntity> getBacklogTasks(@PathVariable Long projectId) {
-//        return taskService.getBackLogTasksByProjectId(projectId);
-//    }
 
-
-    @GetMapping("/sprint_tasks/{sprintId}")
+    @GetMapping("/sprint_tasks/backlog/{sprintId}")
     public List<TaskDTO> getTasksBySprintId(@PathVariable Long sprintId) {
         List<TaskEntity> tasks = taskService.getTasksBySprintId(sprintId);
 
@@ -50,7 +46,8 @@ public class TaskController {
                         task.getTitle(),
                         task.getSprint() != null ? task.getSprint().getId() : null,
                         task.getTaskKey(),
-                        task.getTaskType()
+                        task.getTaskType(),
+                        task.getTaskStatus()
                 ))
                 .collect(Collectors.toList());
     }
@@ -62,5 +59,37 @@ public class TaskController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Ошибка при обновлении задачи");
         }
+
+    }
+    @PostMapping("/update_status/{taskId}")
+    public ResponseEntity<?> updateStatus(@PathVariable Long taskId, @RequestBody TaskStatusUpdateRequest request) {
+        taskService.updateStatus(taskId, request.getStatusName());
+        return ResponseEntity.ok().build();
+    }
+    @GetMapping("/api/sprint/{sprintId}/search")
+    public ResponseEntity<List<TaskEntity>> searchTasksInSprint(
+            @PathVariable Long sprintId,
+            @RequestParam Long projectId,
+            @RequestParam String query) {
+        List<TaskEntity> tasks = taskService.searchTasksInSprint(query, projectId, sprintId);
+        return ResponseEntity.ok(tasks);
+    }
+    @GetMapping("/api/sprint/{sprintId}/tasks")
+    public ResponseEntity<List<TaskDTO>> getTasksBySprintIdBoard(@PathVariable Long sprintId) {
+        List<TaskEntity> tasks = taskService.getTasksBySprintId(sprintId);
+        if (tasks.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        List<TaskDTO> taskDTOs = tasks.stream()
+                .map(task -> new TaskDTO(
+                        task.getId(),
+                        task.getTitle(),
+                        task.getSprint() != null ? task.getSprint().getId() : null,
+                        task.getTaskKey(),
+                        task.getTaskType(),
+                        task.getTaskStatus()
+                ))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(taskDTOs);
     }
 }
