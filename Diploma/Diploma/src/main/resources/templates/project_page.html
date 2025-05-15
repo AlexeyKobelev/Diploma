@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Главная страница</title>
+  <link rel="stylesheet" th:href="@{/css/project_page.css}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+<div th:replace="fragments/navbar.html"></div>
+  <div class="project-container">
+    <div th:replace="fragments/project-side-navigation.html"></div>
+    <section id="backlog" class="section active-section">
+      <main class="main-content">
+        <!-- Заголовок страницы -->
+        <div class="backlog-header">
+          <div class="header-main">
+            <h1>Бэклог</h1>
+            <button class="complete-project-btn">Завершить проект</button>
+          </div>
+          <!-- Строка поиска и иконки участников -->
+          <div class="search-bar">
+            <div class="search-field">
+              <img src="/icons/search.svg" alt="Поиск" class="search-icon">
+              <input type="text" class="search-input" placeholder="Поиск">
+            </div>
+            <div class="participants-icons">
+              <button class="add-participant-btn">
+                <img src="/icons/addUser.svg" alt="Добавить участника" class="add-icon">
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Модальное окно для создания спринта -->
+        <div id="sprintModal" class="modal1">
+          <div class="create-spring-modal">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 class="create-sprint-text">Создать спринт</h2>
+            <input type="hidden" id="projectId">
+            <input type="hidden" id="sprintId">
+            <label>Название спринта:</label>
+            <input type="text" id="sprintName" placeholder="Введите название" required>
+
+            <label>Длительность:</label>
+            <select id="sprintDuration" onchange="updateDatesFromDuration()" required>
+              <option value="" disabled selected>Выберите</option>
+              <option value="1">1 неделя</option>
+              <option value="2">2 недели</option>
+              <option value="3">3 недели</option>
+              <option value="4">4 недели</option>
+              <option value="custom">Выбирает пользователь</option>
+            </select>
+
+            <label>Дата начала:</label>
+            <input type="datetime-local" id="startDate">
+
+            <label>Дата окончания:</label>
+            <input type="datetime-local" id="endDate" readonly>
+
+            <label>Цель спринта:</label>
+            <textarea id="sprintGoal" placeholder="Опишите цель спринта..."></textarea>
+
+            <div class="modal-actions">
+              <button class="cancel-btn" onclick="closeModal()">Отмена</button>
+              <button class="submit-btn" onclick="submitSprint()">Начать</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="scrollable-backlog-container">
+          <!-- Кнопка "Создать спринт" + пустой бэклог -->
+          <div class="backlog-sprint-tusk-wrapper backlog-section">
+            <button class="start-project-btn" onclick="openModal()">Создать спринт</button>
+            <div class="empty-backlog">
+              <p>Бэклог пуст</p>
+            </div>
+            <div class="create-task-btn-wrapper">
+              <button class="create-task-btn">
+                <img src="/icons/plus.svg" alt="Добавить" class="plus-icon">
+                Создать задачу
+              </button>
+
+              <div class="task-form-container" style="display: none;">
+                <div class="task-type-select">
+                  <div class="custom-select">
+                    <div class="selected-option">
+                      <div class="content">
+                        <img src="/icons/tusk.svg" alt="иконка задачи" />
+                        <span class="selected-text">Задача</span>
+                      </div>
+                      <div class="arrow">
+                        <img src="/icons/mingcute_down-line.svg" />
+                      </div>
+                    </div>
+                    <div class="optionsbacklog">
+                      <div class="option" data-value="task">
+                        <img src="/icons/tusk.svg" alt="иконка задачи" />
+                        <span class="option-text">Задача</span>
+                      </div>
+                      <div class="option" data-value="story">
+                        <img src="/icons/history.svg" alt="иконка истории" />
+                        <span class="option-text">История</span>
+                      </div>
+                      <div class="option" data-value="bug">
+                        <img src="/icons/bug.svg" alt="иконка бага" />
+                        <span class="option-text">Баг</span>
+                      </div>
+                    </div>
+
+                    <input type="hidden" name="taskType" value="task" />
+                  </div>
+                </div>
+
+                <input type="text" class="task-title-bs" placeholder="Название задачи" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </section>
+  </div>
+<script th:src="@{/js/project_page.js}"></script>
+</body>
+</html>
