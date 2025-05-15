@@ -97,6 +97,8 @@ public class ContentController {
             default -> true;
         };
 
+        //l
+
         boolean chatAccessAllowed = switch (section) {
             case "teamChat" -> teamService.isUserInTeam(email, entityId);
             case "projectChat" -> projectService.isUserInProject(email, id);
