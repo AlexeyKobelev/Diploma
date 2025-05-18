@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Главная страница</title>
+    <link rel="stylesheet" th:href="@{/css/report.css}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+<div th:replace="fragments/navbar.html"></div>
+<div class="project-container">
+    <div th:replace="fragments/project-side-navigation.html"></div>
+    <section id="report" class="section">
+        <main class="main-content scroll">
+            <div class="header-main">
+                <h1>Диаграмма Burndown</h1>
+            </div>
+
+            <div class="filters-container">
+                <div class="filter-group">
+                    <label for="filter-entity">Спринт/Пользователь</label>
+                    <select id="filter-entity" class="filter-select select-report" name="filter-entity">
+                        <optgroup label="Спринты" id="sprint-options">
+                            <!-- сюда будут подгружаться спринты -->
+                        </optgroup>
+                        <optgroup label="Пользователи" id="user-options">
+                            <!-- сюда будут подгружаться пользователи -->
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="criteria">Критерий</label>
+                    <select id="criteria"  class="filter-select select-report" name="criteria">
+                        <option value="tasks">Количество задач</option>
+                        <option value="complexity">Сложность задач</option>
+                        <option value="progress">Выполнение</option>
+                    </select>
+                </div>
+            </div>
+            <div class="sprint-data">
+                <span><strong>Дата</strong></span>
+                <span>16 мая 2025 г.</span>
+                <span> - </span>
+                <span>23 мая 2025 г.</span>
+            </div>
+            <div class="chart-container">
+                <div class="lines">
+                    <div class="line">
+                        -- Оставшаяся работа
+                    </div>
+                    <div class="line">
+                        -- Ориентир
+                    </div>
+                </div>
+                <canvas id="report-chart"></canvas>
+            </div>
+            <div class="sprint-user-stat-wrapper" style="margin-top: 40px;">
+                <h2 class="report-title">Отчёт: <span id="report-sprint-name">Название спринта</span></h2>
+
+                <!-- Незавершённые задачи -->
+                <h3 class="table-title">Незавершённые задачи</h3>
+                <table class="report-table">
+                    <thead>
+                    <tr>
+                        <th>Ключ</th>
+                        <th>Сводка</th>
+                        <th>Тип задачи</th>
+                        <th>Статус</th>
+                        <th>Исполнитель</th>
+                        <th>Оценка сложности</th>
+                    </tr>
+                    </thead>
+                    <tbody id="incomplete-tasks">
+                    <tr>
+                        <td>KEYS-01</td>
+                        <td>Задача для примера</td>
+                        <td>
+                            <div class="td-status"><img src="icons/green-tusk-tag.svg"> <span> Задача</span></div></td>
+                        <td>Выполнено</td>
+                        <td>Братишка мой</td>
+                        <td>10</td>
+                    </tr>
+                    <tr>
+                        <td>KEYS-01</td>
+                        <td>Задача для примера</td>
+                        <td>
+                            <div class="td-status"><img src="icons/green-tusk-tag.svg"> <span> Задача</span></div></td>
+                        <td>Выполнено</td>
+                        <td>Братишка мой</td>
+                        <td>10</td>
+                    </tr>
+                    </tbody>
+                </table>
+
+                <!-- Завершённые задачи -->
+                <h3  class="table-title">Завершённые задачи</h3>
+                <table class="report-table">
+                    <thead>
+                    <tr>
+                        <th>Ключ</th>
+                        <th>Сводка</th>
+                        <th>Тип задачи</th>
+                        <th>Статус</th>
+                        <th>Исполнитель</th>
+                        <th>Оценка сложности</th>
+                    </tr>
+                    </thead>
+                    <tbody id="completed-tasks">
+                    <tr>
+                        <td>KEYS-01</td>
+                        <td>Задача для примера</td>
+                        <td>
+                            <div class="td-status"><img src="icons/green-tusk-tag.svg" alt="тэг"> <span> Задача</span></div></td>
+                        <td>Выполнено</td>
+                        <td>Братишка мой</td>
+                        <td>10</td>
+                    </tr>
+                    <tr>
+                        <td>KEYS-01</td>
+                        <td>Задача для примера</td>
+                        <td>
+                            <div class="td-status"><img src="icons/green-tusk-tag.svg"> <span> Задача</span></div></td>
+                        <td>Выполнено</td>
+                        <td>Братишка мой</td>
+                        <td>10</td>
+                    </tr>
+                    <tr>
+                        <td>KEYS-01</td>
+                        <td>Задача для примера</td>
+                        <td>
+                            <div class="td-status"><img src="icons/green-tusk-tag.svg"> <span> Задача</span></div></td>
+                        <td>Выполнено</td>
+                        <td>Братишка мой</td>
+                        <td>10</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </main>
+    </section>
+    </div>
+</body>
+</html>

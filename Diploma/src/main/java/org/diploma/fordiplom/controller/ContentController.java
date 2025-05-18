@@ -54,15 +54,25 @@ public class ContentController {
         return "profile";
     }
 
-        @GetMapping("/board")
+    @GetMapping("/board")
     public String board(){
         return "board";
     }
+    @GetMapping("/report")
+    public String report(){return "report";}
+    @GetMapping("/code")
+    public String code(){return "code";}
     @GetMapping("/project_page")
     public String projectPage(@RequestParam Long id, @RequestParam String section) {
         // Логика для загрузки страницы в зависимости от секции
         if (section.equals("board")) {
             return "board";  // Рендерит страницу доски
+        }
+        if(section.equals("report")) {
+            return "report";
+        }
+        if(section.equals("code")) {
+            return "code";
         }
         return "project_page";  // Стандартная страница проекта
     }
