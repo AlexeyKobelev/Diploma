@@ -18,15 +18,13 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
     List<TaskEntity> findByProject_IdAndSprintIsNullOrderByPositionAsc(Long projectId);
     @Query("SELECT COALESCE(MAX(t.position), 0) FROM TaskEntity t WHERE t.sprint IS NULL")
     int findMaxPositionInSprint(@Param("sprintId") Long sprintId);
-    @Query("""
-    SELECT t FROM TaskEntity t
-    WHERE LOWER(t.title) LIKE LOWER(CONCAT(:query, '%'))
-      AND t.project.id = :projectId
-      AND t.sprint.id = :sprintId
-""")
-    List<TaskEntity> searchInSprint(@Param("query") String query,
-                                    @Param("projectId") Long projectId,
-                                    @Param("sprintId") Long sprintId);
+    @Query("SELECT t FROM TaskEntity t " +
+            "WHERE LOWER(t.title) LIKE LOWER(CONCAT('%', :query, '%')) " +
+            "AND t.project.id = :projectId " +
+            "AND t.sprint.id IN :sprintIds")
+    List<TaskEntity> searchInSprints(@Param("query") String query,
+                                     @Param("projectId") Long projectId,
+                                     @Param("sprintIds") List<Long> sprintIds);
     List<TaskEntity> findBySprintOrderByPositionAsc(SprintEntity sprint);
     int countByProjectIdAndIsCompletedTrue(Long projectId);
 }

@@ -7,6 +7,7 @@ import org.diploma.fordiplom.entity.DTO.TaskDTO;
 import org.diploma.fordiplom.entity.DTO.request.SprintRequest;
 import org.diploma.fordiplom.entity.DTO.response.SprintResponse;
 import org.diploma.fordiplom.entity.SprintEntity;
+import org.diploma.fordiplom.entity.TaskEntity;
 import org.diploma.fordiplom.service.SprintService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -66,6 +67,7 @@ public class SprintController {
     public SprintSummaryDTO getSprintSummary(@PathVariable Long sprintId) {
         return sprintService.getSprintSummary(sprintId);
     }
+
 
 }
 

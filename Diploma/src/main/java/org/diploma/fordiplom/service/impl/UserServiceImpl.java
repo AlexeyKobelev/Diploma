@@ -1,18 +1,21 @@
 package org.diploma.fordiplom.service.impl;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import jakarta.transaction.Transactional;
 import org.diploma.fordiplom.entity.UserEntity;
 import org.diploma.fordiplom.repository.UserRepository;
 import org.diploma.fordiplom.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @Transactional
@@ -21,16 +24,62 @@ public class UserServiceImpl implements UserService {
     private UserRepository userRepository;
     @Autowired
     private PasswordEncoder passwordEncoder;
-
+    @Autowired
+    private JavaMailSender mailSender;
     @Override
     public UserEntity createUser(UserEntity user) throws Exception {
-        UserEntity newUser = new UserEntity();
         if (existsByEmail(user.getEmail())) {
             throw new Exception("Email already exists");
         }
+
+        String token = UUID.randomUUID().toString(); // Уникальный токен
+
+        UserEntity newUser = new UserEntity();
         newUser.setEmail(user.getEmail());
         newUser.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(newUser);
+        newUser.setConfirmationToken(token);
+        newUser.setEnabled(false); // Пока не активирован
+
+        userRepository.save(newUser);
+
+        // Отправка письма с токеном
+        sendConfirmationEmail(newUser.getEmail(), token);
+
+        return newUser;
+    }
+    @Transactional
+    @Override
+    public void sendConfirmationEmail(String toEmail, String token) throws MessagingException {
+        String confirmUrl = "http://localhost:8080/confirm?token=" + token;
+        String subject = "Подтверждение регистрации";
+        String message = "<p>Перейдите по ссылке, чтобы подтвердить регистрацию:</p>" +
+                "<a href=\"" + confirmUrl + "\">Подтвердить регистрацию</a>";
+
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
+
+        helper.setFrom("martinov1804@mail.ru");
+        helper.setTo(toEmail);
+        helper.setSubject(subject);
+        helper.setText(message, true); // true = письмо в формате HTML
+
+        mailSender.send(mimeMessage);
+        System.out.println("Email sent to " + toEmail);
+    }
+    @Transactional
+    @Override
+    public String confirmUser(String token) {
+        Optional<UserEntity> userOptional = userRepository.findByConfirmationToken(token);
+        if (userOptional.isEmpty()) {
+            System.out.println("Некорректный токен: " + token);
+            return "Некорректный токен подтверждения.";
+        }
+
+        UserEntity user = userOptional.get();
+
+        user.setEnabled(true);
+        userRepository.save(user);
+        return "Email подтвержден. Теперь вы можете войти в систему.";
     }
 
     @Override

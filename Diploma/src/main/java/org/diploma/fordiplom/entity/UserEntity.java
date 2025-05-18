@@ -39,8 +39,11 @@ public class UserEntity {
     private String userImgPath;
     @Transient
     private String confirmPassword;
+    @Column(name = "enabled")
+    private Boolean enabled;
+    @Column(name = "confirmation_token")
+    private String confirmationToken;
     @ManyToMany(mappedBy = "emails")
-//    @JsonBackReference
     @JsonIgnore
     private Set<TeamEntity> teams = new HashSet<>();
     @ManyToMany(mappedBy = "users")

@@ -167,14 +167,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     searchInput.addEventListener("input", async (e) => {
         const query = e.target.value.trim();
-
-        // Очищаем предыдущий таймер
         if (searchTimeout) clearTimeout(searchTimeout);
 
         searchTimeout = setTimeout(async () => {
             const projectId = getProjectIdFromUrl();
 
-            // Если строка поиска пуста — перезагружаем все задачи
             if (!query) {
                 const columns = document.querySelectorAll(".kanban-column");
                 columns.forEach(column => {
@@ -185,24 +182,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Если введён текст — ищем
-            const sprintId = await getActiveSprintId(projectId);
-            if (!sprintId) return;
-
             try {
-                const res = await fetch(`/api/sprint/${sprintId}/search?projectId=${projectId}&query=${encodeURIComponent(query)}`);
+                const res = await fetch(`/api/project/${projectId}/search?query=${encodeURIComponent(query)}`);
                 if (!res.ok) {
                     console.error("Ошибка поиска задач");
                     return;
                 }
-
                 const tasks = await res.json();
-
                 renderSearchResults(tasks);
             } catch (err) {
                 console.error("Ошибка во время выполнения поиска:", err);
             }
-        }, 400); // Задержка 400 мс
+        }, 400);
     });
 });
 

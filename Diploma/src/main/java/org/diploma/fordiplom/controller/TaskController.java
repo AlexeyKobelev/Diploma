@@ -80,13 +80,11 @@ public class TaskController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/api/sprint/{sprintId}/search")
-    public ResponseEntity<List<TaskDTO>> searchTasksInSprint(
-            @PathVariable Long sprintId,
-            @RequestParam Long projectId,
+    @GetMapping("/api/project/{projectId}/search")
+    public ResponseEntity<List<TaskDTO>> searchTasksInActiveSprints(
+            @PathVariable Long projectId,
             @RequestParam String query) {
-        // Получаем список TaskDTO от сервиса
-        List<TaskDTO> tasks = taskService.searchTasksInSprint(query, projectId, sprintId);
+        List<TaskDTO> tasks = taskService.searchTasksInActiveSprints(query, projectId);
         return ResponseEntity.ok(tasks);
     }
 

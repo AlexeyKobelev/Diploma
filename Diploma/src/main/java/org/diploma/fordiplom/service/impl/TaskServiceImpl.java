@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -173,13 +174,19 @@ public class TaskServiceImpl implements TaskService {
                 "status"          // поле
         );
     }
-    public List<TaskDTO> searchTasksInSprint(String query, Long projectId, Long sprintId) {
-        // Получаем список задач из репозитория
-        List<TaskEntity> tasks = taskRepository.searchInSprint(query, projectId, sprintId);
+    public List<TaskDTO> searchTasksInActiveSprints(String query, Long projectId) {
+        // Получаем ID всех активных спринтов проекта
+        List<Long> activeSprintIds = sprintRepository.findActiveSprintIdsByProjectId(projectId);
 
-        // Преобразуем список TaskEntity в TaskDTO
+        if (activeSprintIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Ищем задачи в этих спринтах
+        List<TaskEntity> tasks = taskRepository.searchInSprints(query, projectId, activeSprintIds);
+
         return tasks.stream()
-                .map(TaskDTO::new)  // Используем конструктор TaskDTO, который принимает TaskEntity
+                .map(TaskDTO::new)
                 .collect(Collectors.toList());
     }
 

@@ -66,4 +66,5 @@ public class ContentController {
         }
         return "project_page";  // Стандартная страница проекта
     }
+
 }
