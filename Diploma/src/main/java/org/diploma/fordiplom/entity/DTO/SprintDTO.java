@@ -34,6 +34,13 @@ public class SprintDTO {
     }
 
     public SprintDTO(SprintEntity sprint) {
+        this.id = sprint.getId();
+        this.sprintName = sprint.getSprintName();
+        this.startDate = sprint.getStartDate();
+        this.endDate = sprint.getEndDate();
+        this.goal = sprint.getGoal();
+        this.duration = sprint.getDuration();
+        this.isActive = sprint.getIsActive();
     }
 
 }

@@ -108,11 +108,33 @@ public class SprintServiceImpl implements SprintService {
         return new SprintSummaryDTO(doneCount, openCount, openTasks);
     }
 
+    @Override
+    public List<SprintEntity> getAllByProjectId(Long projectId) {
+        return sprintRepository.findAllByProjectId(projectId); // новый метод
+    }
+
+    @Override
+    public SprintDTO getSprintWithTasks(Long sprintId) {
+        SprintEntity sprint = sprintRepository.findById(sprintId)
+                .orElseThrow(() -> new RuntimeException("Sprint not found"));
+
+        List<TaskEntity> tasks = taskRepository.findBySprintId(sprintId);
+
+        List<TaskDTO> taskDTOs = tasks.stream()
+                .map(TaskDTO::new)
+                .toList();
+
+        SprintDTO sprintDTO = new SprintDTO(sprint);
+        sprintDTO.setTasks(taskDTOs);
+
+        return sprintDTO;
+    }
+
 
     @Override
     public SprintEntity getSprintById(Long id){return sprintRepository.findById(id).orElse(null);}
     @Override
-    public List<SprintEntity> getSprintByProjectId(Long projectId){return sprintRepository.findByProjectId(projectId);}
+    public List<SprintEntity> getSprintByProjectId(Long projectId){return sprintRepository.findIncompleteInactiveSprintsByProjectId(projectId);}
 
     @Override
     public List<SprintResponse> getSprintsByProjectId(Long projectId) {

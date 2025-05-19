@@ -579,8 +579,13 @@ menu, ol, ul {
 }
 .select-report{
     min-width: 200px;
-    padding-left: 5px;
+    padding:5px;
     outline: none;
+    border: 1px solid #DCDFE4;
+    border-radius: 5px;
+}
+.select-report:focus-within{
+    border-color: #3290ec;
 }
 .filter-group {
     display: flex;

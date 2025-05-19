@@ -16,13 +16,14 @@
     <section id="report" class="section">
         <main class="main-content scroll">
             <div class="header-main">
-                <h1>Диаграмма Burndown</h1>
+                <h1>Отчет</h1>
             </div>
 
             <div class="filters-container">
                 <div class="filter-group">
                     <label for="filter-entity">Спринт/Пользователь</label>
                     <select id="filter-entity" class="filter-select select-report" name="filter-entity">
+                        <option>Выберите Спринт/Пользователь</option>
                         <optgroup label="Спринты" id="sprint-options">
                             <!-- сюда будут подгружаться спринты -->
                         </optgroup>
@@ -37,25 +38,14 @@
                     <select id="criteria"  class="filter-select select-report" name="criteria">
                         <option value="tasks">Количество задач</option>
                         <option value="complexity">Сложность задач</option>
-                        <option value="progress">Выполнение</option>
+                        <option value="taskTypes">Типы задач</option>
                     </select>
                 </div>
             </div>
             <div class="sprint-data">
-                <span><strong>Дата</strong></span>
-                <span>16 мая 2025 г.</span>
-                <span> - </span>
-                <span>23 мая 2025 г.</span>
             </div>
             <div class="chart-container">
-                <div class="lines">
-                    <div class="line">
-                        -- Оставшаяся работа
-                    </div>
-                    <div class="line">
-                        -- Ориентир
-                    </div>
-                </div>
+                <div class="lines"></div>
                 <canvas id="report-chart"></canvas>
             </div>
             <div class="sprint-user-stat-wrapper" style="margin-top: 40px;">
@@ -75,24 +65,6 @@
                     </tr>
                     </thead>
                     <tbody id="incomplete-tasks">
-                    <tr>
-                        <td>KEYS-01</td>
-                        <td>Задача для примера</td>
-                        <td>
-                            <div class="td-status"><img src="icons/green-tusk-tag.svg"> <span> Задача</span></div></td>
-                        <td>Выполнено</td>
-                        <td>Братишка мой</td>
-                        <td>10</td>
-                    </tr>
-                    <tr>
-                        <td>KEYS-01</td>
-                        <td>Задача для примера</td>
-                        <td>
-                            <div class="td-status"><img src="icons/green-tusk-tag.svg"> <span> Задача</span></div></td>
-                        <td>Выполнено</td>
-                        <td>Братишка мой</td>
-                        <td>10</td>
-                    </tr>
                     </tbody>
                 </table>
 
@@ -110,33 +82,6 @@
                     </tr>
                     </thead>
                     <tbody id="completed-tasks">
-                    <tr>
-                        <td>KEYS-01</td>
-                        <td>Задача для примера</td>
-                        <td>
-                            <div class="td-status"><img src="icons/green-tusk-tag.svg" alt="тэг"> <span> Задача</span></div></td>
-                        <td>Выполнено</td>
-                        <td>Братишка мой</td>
-                        <td>10</td>
-                    </tr>
-                    <tr>
-                        <td>KEYS-01</td>
-                        <td>Задача для примера</td>
-                        <td>
-                            <div class="td-status"><img src="icons/green-tusk-tag.svg"> <span> Задача</span></div></td>
-                        <td>Выполнено</td>
-                        <td>Братишка мой</td>
-                        <td>10</td>
-                    </tr>
-                    <tr>
-                        <td>KEYS-01</td>
-                        <td>Задача для примера</td>
-                        <td>
-                            <div class="td-status"><img src="icons/green-tusk-tag.svg"> <span> Задача</span></div></td>
-                        <td>Выполнено</td>
-                        <td>Братишка мой</td>
-                        <td>10</td>
-                    </tr>
                     </tbody>
                 </table>
             </div>
@@ -144,5 +89,9 @@
         </main>
     </section>
     </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.3.0/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.0/dist/chartjs-plugin-annotation.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+<script th:src="@{/js/report.js}"></script>
 </body>
 </html>

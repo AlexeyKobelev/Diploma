@@ -1,8 +1,8 @@
 package org.diploma.fordiplom.service;
 
 import jakarta.mail.MessagingException;
+import org.diploma.fordiplom.entity.DTO.UserDTO;
 import org.diploma.fordiplom.entity.UserEntity;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Service;
 
 import java.security.Principal;
@@ -23,5 +23,8 @@ public interface UserService {
         void saveUserImgPath(Long userId, String imgUrl);
         void sendConfirmationEmail(String toEmail, String token) throws MessagingException;
         String confirmUser(String token);
+        List<UserEntity> getUsersByProjectTasks(Long projectId);
+        List<UserDTO> getUsersWithTasksByProjectId(Long projectId);
+        UserDTO getUserWithTasks(Long userId, Long projectId);
 
 }

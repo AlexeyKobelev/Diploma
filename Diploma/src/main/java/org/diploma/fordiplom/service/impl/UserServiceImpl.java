@@ -1,12 +1,15 @@
 package org.diploma.fordiplom.service.impl;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import org.diploma.fordiplom.entity.DTO.UserDTO;
+import org.diploma.fordiplom.entity.TaskEntity;
 import org.diploma.fordiplom.entity.UserEntity;
+import org.diploma.fordiplom.repository.TaskRepository;
 import org.diploma.fordiplom.repository.UserRepository;
 import org.diploma.fordiplom.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -26,6 +29,8 @@ public class UserServiceImpl implements UserService {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private JavaMailSender mailSender;
+    @Autowired
+    private TaskRepository taskRepository;
     @Override
     public UserEntity createUser(UserEntity user) throws Exception {
         if (existsByEmail(user.getEmail())) {
@@ -81,6 +86,33 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
         return "Email подтвержден. Теперь вы можете войти в систему.";
     }
+
+    @Override
+    public List<UserEntity> getUsersByProjectTasks(Long projectId) {
+        return userRepository.findDistinctByTasksSprintProjectId(projectId);
+    }
+
+    @Override
+    public List<UserDTO> getUsersWithTasksByProjectId(Long projectId) {
+        List<UserEntity> userEntities = userRepository.findDistinctByTasksSprintProjectId(projectId);
+
+        return userEntities.stream()
+                .map(user -> {
+                    List<TaskEntity> tasks = taskRepository.findAllByExecutorIdAndProjectId(user.getId_user(), projectId);
+                    return new UserDTO(user, tasks);
+                })
+                .toList();
+    }
+
+    @Override
+    public UserDTO getUserWithTasks(Long userId, Long projectId) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("Пользователь не найден"));
+
+        List<TaskEntity> tasks = taskRepository.findAllTasksByExecutorIdAndProjectId(userId, projectId);
+        return new UserDTO(user, tasks);
+    }
+
 
     @Override
     public UserEntity updateUser(String email, UserEntity user) {

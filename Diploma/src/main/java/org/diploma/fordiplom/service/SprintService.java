@@ -6,6 +6,7 @@ import org.diploma.fordiplom.entity.DTO.TaskDTO;
 import org.diploma.fordiplom.entity.DTO.request.SprintRequest;
 import org.diploma.fordiplom.entity.DTO.response.SprintResponse;
 import org.diploma.fordiplom.entity.SprintEntity;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,4 +21,6 @@ public interface SprintService {
     SprintEntity updateSprint(Long sprintId, SprintRequest request);
     List<SprintDTO> getActiveSprintsWithTasks(Long projectId);
     SprintSummaryDTO getSprintSummary(Long sprintId);
+    List<SprintEntity> getAllByProjectId(Long projectId);
+    SprintDTO getSprintWithTasks(Long sprintId);
 }
