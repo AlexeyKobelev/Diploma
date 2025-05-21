@@ -23,4 +23,5 @@ public interface SprintService {
     SprintSummaryDTO getSprintSummary(Long sprintId);
     List<SprintEntity> getAllByProjectId(Long projectId);
     SprintDTO getSprintWithTasks(Long sprintId);
+    List<SprintDTO> getActiveSprintsByProject(Long projectId);
 }

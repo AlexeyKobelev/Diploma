@@ -130,6 +130,14 @@ public class SprintServiceImpl implements SprintService {
         return sprintDTO;
     }
 
+    @Override
+    public List<SprintDTO> getActiveSprintsByProject(Long projectId) {
+        List<SprintEntity> activeSprints = sprintRepository.findByProjectIdAndIsActiveTrue(projectId);
+        return activeSprints.stream()
+                .map(SprintDTO::new)
+                .collect(Collectors.toList());
+    }
+
 
     @Override
     public SprintEntity getSprintById(Long id){return sprintRepository.findById(id).orElse(null);}

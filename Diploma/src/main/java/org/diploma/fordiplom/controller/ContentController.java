@@ -53,7 +53,10 @@ public class ContentController {
     public String profile() {
         return "profile";
     }
-
+    @GetMapping("/task")
+    public String task(@RequestParam String key) {
+        return "task";
+    }
     @GetMapping("/board")
     public String board(){
         return "board";

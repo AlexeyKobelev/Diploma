@@ -1,14 +1,12 @@
 package org.diploma.fordiplom.service;
 
 
-import org.aspectj.apache.bcel.generic.Tag;
 import org.diploma.fordiplom.entity.DTO.TagDTO;
 import org.diploma.fordiplom.entity.DTO.TaskDTO;
 import org.diploma.fordiplom.entity.DTO.request.TaskPositionUpdateRequest;
 import org.diploma.fordiplom.entity.DTO.request.TaskRequest;
-import org.diploma.fordiplom.entity.TagEntity;
 import org.diploma.fordiplom.entity.TaskEntity;
-import org.diploma.fordiplom.entity.UserEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -34,5 +32,7 @@ public interface TaskService {
     void assignExecutor(Long taskId, Long userId);
     void updateTaskPositions(List<TaskPositionUpdateRequest> updates);
     List<TaskDTO> getTaskDTOsBySprintId(Long sprintId);
+    void assignSprint(Long taskId, Long sprintId);
+    TaskDTO getTaskByKey(String key);
 
 }

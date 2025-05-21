@@ -1072,7 +1072,7 @@ menu, ol, ul {
 .highlight {
     background-color: #CFE1FD;
 }
- /*окно задачи на доске*/
+/*окно задачи на доске*/
 .task-modal-overlay {
     position: fixed;
     top: 0;
@@ -1880,9 +1880,9 @@ menu, ol, ul {
     font-weight: bold;
     display: block;
     max-width: 100%;
-    white-space: nowrap; 
-    overflow: hidden;     
-    text-overflow: ellipsis;  
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 #confirmDelete {
     background-color: #E63946;

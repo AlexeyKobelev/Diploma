@@ -4,8 +4,10 @@ import jakarta.mail.internet.MimeMessage;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.diploma.fordiplom.entity.DTO.UserDTO;
+import org.diploma.fordiplom.entity.ProjectEntity;
 import org.diploma.fordiplom.entity.TaskEntity;
 import org.diploma.fordiplom.entity.UserEntity;
+import org.diploma.fordiplom.repository.ProjectRepository;
 import org.diploma.fordiplom.repository.TaskRepository;
 import org.diploma.fordiplom.repository.UserRepository;
 import org.diploma.fordiplom.service.UserService;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,6 +34,8 @@ public class UserServiceImpl implements UserService {
     private JavaMailSender mailSender;
     @Autowired
     private TaskRepository taskRepository;
+    @Autowired
+    private ProjectRepository projectRepository;
     @Override
     public UserEntity createUser(UserEntity user) throws Exception {
         if (existsByEmail(user.getEmail())) {
@@ -111,6 +116,13 @@ public class UserServiceImpl implements UserService {
 
         List<TaskEntity> tasks = taskRepository.findAllTasksByExecutorIdAndProjectId(userId, projectId);
         return new UserDTO(user, tasks);
+    }
+
+    public List<UserEntity> getUsersForProject(Long projectId) {
+        ProjectEntity project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Проект не найден"));
+
+        return new ArrayList<>(project.getUsers());
     }
 
 

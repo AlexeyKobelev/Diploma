@@ -684,3 +684,10 @@ canvas{
 .report-table th:nth-child(5) { width: 25%; } /* Исполнитель */
 .report-table th:nth-child(6) { width: 5%; }
 
+.task-key-cell{
+
+}
+.task-key-cell:hover{
+    color: #3290ec;
+    text-decoration-line: underline;
+}

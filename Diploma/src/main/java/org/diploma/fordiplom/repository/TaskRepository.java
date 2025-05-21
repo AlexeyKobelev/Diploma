@@ -1,10 +1,12 @@
 package org.diploma.fordiplom.repository;
 
+import org.diploma.fordiplom.entity.DTO.TaskDTO;
 import org.diploma.fordiplom.entity.SprintEntity;
 import org.diploma.fordiplom.entity.TaskEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
 import java.util.List;
 
 public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
@@ -39,4 +41,6 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
 """)
     List<TaskEntity> findAllTasksByExecutorIdAndProjectId(@Param("executorId") Long executorId,
                                                      @Param("projectId") Long projectId);
+    @Query("SELECT t FROM TaskEntity t WHERE t.taskKey = :key")
+    TaskDTO findByKey(@Param("key") String key);
 }

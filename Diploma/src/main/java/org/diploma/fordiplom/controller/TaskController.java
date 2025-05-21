@@ -178,5 +178,13 @@ public class TaskController {
         taskService.assignExecutor(taskId, userId);
         return ResponseEntity.ok().build();
     }
-
+    @PutMapping("/api/tasks/{taskId}/sprint/{sprintId}")
+    public ResponseEntity<?> assignSprintToTask(@PathVariable Long taskId, @PathVariable Long sprintId) {
+        taskService.assignSprint(taskId, sprintId);
+        return ResponseEntity.ok().build();
+    }
+    @GetMapping("/api/tasks/by-key/{key}")
+    public TaskDTO getTaskByKey(@PathVariable String key) {
+        return taskService.getTaskByKey(key);
+    }
 }

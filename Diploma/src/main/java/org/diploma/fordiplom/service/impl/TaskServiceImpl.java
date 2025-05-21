@@ -11,12 +11,12 @@ import org.diploma.fordiplom.entity.DTO.request.TaskRequest;
 import org.diploma.fordiplom.repository.*;
 import org.diploma.fordiplom.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -105,6 +105,7 @@ public class TaskServiceImpl implements TaskService {
                 .map(TaskDTO::new) // используем конструктор
                 .collect(Collectors.toList());
     }
+
 
     @Override
     public List<TaskEntity> getBackLogTasksByProjectId(Long projectId){
@@ -422,6 +423,20 @@ public class TaskServiceImpl implements TaskService {
         return task.getTags().stream()
                 .map(tag -> new TagDTO(tag.getId(), tag.getName()))
                 .collect(Collectors.toList());
+    }
+    @Override
+    public void assignSprint(Long taskId, Long sprintId) {
+        TaskEntity task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Задача не найдена"));
+        SprintEntity sprint = sprintRepository.findById(sprintId)
+                .orElseThrow(() -> new RuntimeException("Спринт не найден"));
+
+        task.setSprint(sprint);
+        task.setUpdatedAt(Instant.now());
+        taskRepository.save(task);
+    }
+    public TaskDTO getTaskByKey(String key) {
+        return taskRepository.findByKey(key);
     }
 }
 

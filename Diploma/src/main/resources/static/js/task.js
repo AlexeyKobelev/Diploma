@@ -1,509 +1,46 @@
-function handleDragStart(e) {
-    // Сохраняем ID задачи для использования при drop
-    e.dataTransfer.setData("taskId", e.target.dataset.taskId);
-}
+// document.addEventListener('DOMContentLoaded', () => {
+//     const urlParams = new URLSearchParams(window.location.search);
+//     const taskKey = urlParams.get('key'); // достаем параметр key
+//
+//     if (!taskKey) {
+//         alert('Не указан ключ задачи в URL');
+//         return;
+//     }
+//
+//     fetch(`/api/tasks/by-key/${encodeURIComponent(taskKey)}`)
+//         .then(response => {
+//             if (!response.ok) {
+//                 throw new Error('Не удалось загрузить задачу');
+//             }
+//             return response.json();
+//         })
+//         .then(task => {
+//             openTaskModal(task); // открыть модалку с задачей
+//         })
+//         .catch(error => {
+//             console.error(error);
+//             alert('Ошибка при загрузке задачи');
+//         });
+// });
 
-function initKanbanDragAndDrop() {
-    const columns = document.querySelectorAll('.kanban-column .tusk-container');
-
-    columns.forEach(container => { // container теперь будет правильно определён для каждой колонки
-        container.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            const taskElement = e.target.closest('.task-content');
-            if (taskElement && taskElement !== e.target) {
-                taskElement.classList.add('drag-over');
-            }
-        });
-
-        container.addEventListener('dragleave', (e) => {
-            const taskElement = e.target.closest('.task-content');
-            if (taskElement) {
-                taskElement.classList.remove('drag-over');
-            }
-        });
-
-        container.addEventListener('drop', async (e) => {
-            e.preventDefault();
-
-            const taskId = e.dataTransfer.getData("taskId");
-            const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
-            const newStatus = container.closest('.kanban-column').querySelector('.kanban-column-name span').innerText;
-
-            const dropTarget = e.target.closest('.task-content');
-
-            if (!dropTarget || dropTarget.classList.contains('add-task-btn')) {
-                const addButton = container.querySelector('.add-task-btn');
-                container.insertBefore(taskElement, addButton); // вставка ПЕРЕД кнопкой
-            } else if (dropTarget !== taskElement) {
-                container.insertBefore(taskElement, dropTarget);
-            }
-
-            try {
-                const response = await fetch('/update_status', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ taskId, status: newStatus })
-                });
-
-                if (!response.ok) throw new Error('Ошибка при обновлении статуса');
-            } catch (err) {
-                console.error(err);
-            }
-
-            taskElement.classList.remove('drag-over');
-            await updateTaskOrder(container);
-        });
-    });
-}
-initKanbanDragAndDrop();
-async function updateTaskOrder(container) {
-    const tasks = container.querySelectorAll('.task-content');
-    const updates = [];
-
-    tasks.forEach((taskElement, index) => {
-        const taskId = taskElement.dataset.taskId;
-        updates.push({ taskId: parseInt(taskId), position: index });
-    });
-
-    try {
-        const response = await fetch('/update_task_positions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updates)
-        });
-
-        if (!response.ok) throw new Error('Ошибка при обновлении позиций');
-    } catch (err) {
-        console.error(err);
-    }
-}
-// Отрисовывание задач на доске
-async function loadActiveSprints(projectId) {
-    const iconMap = {
-        task: 'icons/tusk.svg',
-        story: 'icons/history.svg',
-        bug: 'icons/bug.svg'
-    };
-
-    try {
-        const response = await fetch(`/api/sprint/active/${projectId}`);
-        if (!response.ok) throw new Error('Не удалось загрузить активные спринты');
-        const sprints = await response.json(); // теперь это массив
-
-        const columnMap = {
-            'К выполнению': '.kanban-column:first-child .tusk-container',
-            'В работе': '.kanban-column:nth-child(2) .tusk-container',
-            'Выполнено': '.kanban-column:nth-child(3) .tusk-container'
-        };
-
-        sprints.forEach(sprint => {
-            sprint.tasks.forEach(task => {
-                if (!task.status) return;
-                const icon = iconMap[task.taskType] || 'icons/tusk.svg';
-                const taskContentHTML = `
-                    <div class="task-content" draggable="true" data-task-id="${task.id}">
-                        <div class="task-name">
-                            <span class="task-title">${task.title}</span>
-                        </div>
-                        <div class="tusk-bottom">
-                            <div class="tag-and-key">
-                                <img class="tag" src="${icon}">
-                                <span class="task-id">${task.taskKey}</span>
-                            </div>
-                            <button>
-                                <img class="performer" src="/icons/Group%205.svg">
-                            </button>
-                        </div>
-                    </div>
-                `;
-
-                const taskContainer = document.createElement('div');
-                taskContainer.innerHTML = taskContentHTML;
-
-                const kanbanColumn = document.querySelector(columnMap[task.status]);
-                const addButton = kanbanColumn.querySelector('.add-task-btn');
-                kanbanColumn.insertBefore(taskContainer.firstElementChild, addButton);
-
-                const taskElement = kanbanColumn.querySelector(`[data-task-id="${task.id}"]`);
-                taskElement.addEventListener("dragstart", handleDragStart);
-            });
-        });
-    } catch (err) {
-        console.error('Ошибка при загрузке активных спринтов:', err);
-    }
-}
-
-function getProjectIdFromUrl() {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('id');
-}
-
-// Загрузка данных спринта
-async function loadSprintInfo(projectId) {
-    try {
-        const response = await fetch(`/api/sprint/active/${projectId}`);
-        if (!response.ok) {
-            throw new Error('Не удалось загрузить данные о спринте');
-        }
-
-        const sprintData = await response.json();
-
-
-    } catch (error) {
-        console.error(error);
-        document.getElementById('sprint-name').textContent = "Спринт";
-        document.getElementById('sprint-duration').textContent = "Длительность:";
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    const projectId = getProjectIdFromUrl();
-    if (projectId) {
-        loadActiveSprints(projectId);
-        loadSprintInfo(projectId);
-    }
-    const searchInput = document.querySelector(".search-input-board");
-    let searchTimeout = null;
-
-    searchInput.addEventListener("input", async (e) => {
-        const query = e.target.value.trim();
-        if (searchTimeout) clearTimeout(searchTimeout);
-
-        searchTimeout = setTimeout(async () => {
-            const projectId = getProjectIdFromUrl();
-
-            if (!query) {
-                const columns = document.querySelectorAll(".kanban-column");
-                columns.forEach(column => {
-                    const container = column.querySelector(".tusk-container");
-                    container.querySelectorAll(".task-content").forEach(el => el.remove());
-                });
-                loadActiveSprints(projectId);
-                return;
-            }
-
-            try {
-                const res = await fetch(`/api/project/${projectId}/search?query=${encodeURIComponent(query)}`);
-                if (!res.ok) {
-                    console.error("Ошибка поиска задач");
-                    return;
-                }
-                const tasks = await res.json();
-                renderSearchResults(tasks);
-            } catch (err) {
-                console.error("Ошибка во время выполнения поиска:", err);
-            }
-        }, 400);
-    });
-});
-
-// создание задачи на доске
-function createTaskFormBoard() {
-    const formContainer = document.createElement("div");
-    formContainer.className = "task-content task-form";
-
-    formContainer.innerHTML = `
-        <input type="text" class="task-title-bs" placeholder="Введите что хотите сделать" />
-        <div class="select-create-wrap-board">
-        <div class="task-type-select">
-            <div class="custom-select">
-                <div class="selected-option">
-                    <div class="content">
-                        <img src="/icons/tusk.svg" alt="иконка задачи" />
-                        <span class="selected-text">Задача</span>
-                    </div>
-                    <div class="arrow">
-                        <img src="/icons/mingcute_down-line.svg" />
-                    </div>
-                </div>
-                <div class="optionsbacklog" style="display: none;">
-                    <div class="option" data-value="task">
-                        <img src="/icons/tusk.svg" alt="иконка задачи" />
-                        <span class="option-text">Задача</span>
-                    </div>
-                    <div class="option" data-value="story">
-                        <img src="/icons/history.svg" alt="иконка истории" />
-                        <span class="option-text">История</span>
-                    </div>
-                    <div class="option" data-value="bug">
-                        <img src="/icons/bug.svg" alt="иконка бага" />
-                        <span class="option-text">Баг</span>
-                    </div>
-                </div>
-                <input type="hidden" name="taskType" class="task-type-input" value="task" />
-            </div>
-        </div>
-              <button class="save-task-btn">
-               <img src="/icons/enter.svg"> 
-            </button>
-        </div>
-    `;
-
-    return formContainer;
-}
-
-document.addEventListener("click", (e) => {
-    const btn = e.target.closest(".add-task-btn");
-    if (!btn) return;
-
-    const column = btn.closest(".kanban-column");
-
-    // Если форма уже есть — не добавляем
-    if (column.querySelector(".task-form")) return;
-
-    const form = createTaskFormBoard();
-    column.querySelector(".tusk-container").insertBefore(form, btn);
-
-    form.querySelector(".task-title-bs").focus();
-
-    setupCustomSelect(form);
-    form.querySelector(".save-task-btn").addEventListener("click", async () => {
-
-        const title = form.querySelector(".task-title-bs").value.trim();
-        const taskType = form.querySelector(".task-type-input").value;
-
-        if (!title) {
-            alert("Введите название задачи");
-            return;
-        }
-
-        const status = column.querySelector(".kanban-column-name").textContent.trim();
-        const projectId = getProjectIdFromUrl();
-
-        const sprintRes = await fetch(`/api/sprint/active/${projectId}`);
-        if (!sprintRes.ok) {
-            alert("Ошибка загрузки активного спринта");
-            return;
-        }
-
-        const sprint = await sprintRes.json();
-
-        const newTask = {
-            title: title,
-            task_type: taskType,
-            sprintId: sprint.id,
-            projectId: projectId,
-            status: status
-        };
-
-        const createRes = await fetch("/create_task", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(newTask)
-        });
-
-        if (!createRes.ok) {
-            alert("Ошибка создания задачи");
-            return;
-        }
-
-        const taskData = await createRes.json();
-
-        const iconMap = {
-            task: 'icons/tusk.svg',
-            story: 'icons/history.svg',
-            bug: 'icons/bug.svg'
-        };
-
-        const taskContentHTML = `
-        <div class="task-content" draggable="true" data-task-id="${taskData.id}">
-            <div class="task-name">
-                <span class="task-title">${taskData.title}</span>
-            </div>
-            <div class="tusk-bottom">
-                <div class="tag-and-key">
-                    <img class="tag" src="${iconMap[taskData.taskType] || 'icons/tusk.svg'}">
-                    <span class="task-id">${taskData.taskKey}</span>
-                </div>
-                <button>
-                    <img class="performer" src="/icons/Group%205.svg">
-                </button>
-            </div>
-        </div>
-    `;
-
-        const taskContainer = document.createElement("div");
-        taskContainer.innerHTML = taskContentHTML;
-
-        const addButton = column.querySelector(".add-task-btn");
-        column.querySelector(".tusk-container").insertBefore(taskContainer.firstElementChild, addButton);
-
-        const taskElement = column.querySelector(`[data-task-id="${taskData.id}"]`);
-        taskElement.addEventListener("dragstart", handleDragStart);
-
-        // Убираем форму
-        form.remove();
-        addButton.style.display = "flex";
-    });
-
-
-    btn.style.display = "none";
-
-    // Отключаем hover эффекты для кнопок внутри колонки
-
-    // Удаление формы при клике вне
-    document.addEventListener("click", function handler(event) {
-        if (!form.contains(event.target) && event.target !== btn) {
-            form.remove();
-            btn.style.display = "flex";
-
-            // Восстанавливаем hover эффекты для кнопок
-
-            document.removeEventListener("click", handler);
-        }
-    });
-
-});
-
-function setupCustomSelect(container) {
-    const select = container.querySelector(".custom-select");
-    const selected = select.querySelector(".selected-option");
-    const options = select.querySelector(".optionsbacklog");
-    const input = select.querySelector(".task-type-input");
-    const textSpan = select.querySelector(".selected-text");
-    const iconImg = select.querySelector(".selected-option .content img");
-
-    selected.addEventListener("click", () => {
-        const isVisible = options.style.display === "block";
-
-        // Перед открытием: скрыть выбранную опцию
-        const currentValue = input.value;
-        options.querySelectorAll(".option").forEach(option => {
-            option.style.display = option.dataset.value === currentValue ? "none" : "flex";
-        });
-
-        options.style.display = isVisible ? "none" : "block";
-        selected.querySelector(".arrow").classList.toggle("open", !isVisible);
-    });
-
-    options.querySelectorAll(".option").forEach(option => {
-        option.addEventListener("click", () => {
-            const value = option.dataset.value;
-            const text = option.querySelector(".option-text").textContent;
-            const icon = option.querySelector("img").src;
-
-            input.value = value;
-            textSpan.textContent = text;
-            iconImg.src = icon;
-
-            options.style.display = "none";
-            selected.querySelector(".arrow").classList.remove("open");
-        });
-    });
-}
-
-
-
-// Поиск по доске
-async function getActiveSprintId(projectId) {
-    const res = await fetch(`/api/sprint/active/${projectId}`);
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.id;
-}
-
-function renderSearchResults(tasks) {
-    const columns = document.querySelectorAll(".kanban-column");
-
-    // Очистить все контейнеры задач
-    columns.forEach(column => {
-        const container = column.querySelector(".tusk-container");
-        container.querySelectorAll(".task-content").forEach(el => el.remove());
-    });
-
-    const iconMap = {
-        task: 'icons/tusk.svg',
-        story: 'icons/history.svg',
-        bug: 'icons/bug.svg'
-    };
-
-    const query = document.querySelector(".search-input-board").value.trim().toLowerCase();
-
-    tasks.forEach(task => {
-        const column = [...columns].find(col => {
-            const name = col.querySelector(".kanban-column-name").textContent.trim();
-            return name === task.status;
-        });
-
-        if (!column) return;
-
-        const container = column.querySelector(".tusk-container");
-
-        // Подсветка совпадений в названии задачи
-        const titleLower = task.title.toLowerCase();
-        const matchIndex = titleLower.indexOf(query);
-        let highlightedTitle = task.title;
-
-        if (matchIndex !== -1 && query.length > 0) {
-            const before = task.title.slice(0, matchIndex);
-            const match = task.title.slice(matchIndex, matchIndex + query.length);
-            const after = task.title.slice(matchIndex + query.length);
-            highlightedTitle = `${before}<span class="highlight">${match}</span>${after}`;
-        }
-
-        const html = `
-            <div class="task-content" draggable="true" data-task-id="${task.id}">
-                <div class="task-name">
-                    <span class="task-title">${highlightedTitle}</span>
-                </div>
-                <div class="tusk-bottom">
-                    <div class="tag-and-key">
-                        <img class="tag" src="${iconMap[task.taskType] || 'icons/tusk.svg'}">
-                        <span class="task-id">${task.taskKey}</span>
-                    </div>
-                    <button>
-                        <img class="performer" src="/icons/Group%205.svg">
-                    </button>
-                </div>
-            </div>
-        `;
-
-        const taskElement = document.createElement("div");
-        taskElement.innerHTML = html;
-
-        const addButton = column.querySelector(".add-task-btn");
-        column.querySelector(".tusk-container").insertBefore(taskElement.firstElementChild, addButton);
-    });
-}
-
-// работа с задачей
-document.addEventListener('click', (event) => {
-    const container = event.target.closest('.task-content');
-    if (!container) return;
-
-    const taskId = container.getAttribute('data-task-id');
-    if (!taskId) {
-        console.error('ID задачи не найден в data-task-id');
-        return;
-    }
-
-    // Загружаем задачу с сервера
-    fetch(`/api/tasks/${taskId}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Не удалось загрузить задачу');
-            }
-            return response.json();
-        })
-        .then(task => {
-            // Открываем модалку с полученными данными
-            openTaskModal(task);
-        })
-        .catch(error => {
-            console.error(error);
-            alert('Ошибка при загрузке задачи');
-        });
-});
-// открытие окна задачи
 function openTaskModal(task) {
     const template = document.getElementById('task-modal-template');
     const modal = template.content.cloneNode(true);
     const containerEl = document.getElementById('modal-container');
+
+    // Сохраняем URL без task-параметра
+    const lastUrl = window.location.href;
+    containerEl.setAttribute('data-return-url', lastUrl);
+
+    // Меняем адрес без перезагрузки
+    const taskUrl = `/project_page?id=${task.project.id}&section=report&task=${task.id}`;
+    history.pushState({ modalOpen: true }, '', taskUrl);
+
     containerEl.innerHTML = '';
     containerEl.appendChild(modal);
     containerEl.setAttribute('data-task-id', task.id);
+
+    // Остальная логика как есть
     fillTaskModalData(containerEl, task);
     setupCloseModal(containerEl);
     const difficultyBlock = containerEl.querySelector('.difficulty-block');
@@ -523,7 +60,7 @@ function openTaskModal(task) {
     if (submitBtn) {
         submitBtn.addEventListener('click', () => {
             const taskId = containerEl.getAttribute('data-task-id');
-            submitComment(taskId); // Отправка комментария при клике
+            submitComment(taskId);
         });
     }
     const commentsSection = containerEl.querySelector('.comments-section');
@@ -532,14 +69,14 @@ function openTaskModal(task) {
         commentsSection.style.display = 'block';
         historySection.style.display = 'none';
     }
-
     const commentsBtn = containerEl.querySelector('button[data-target="comments-section"]');
     if (commentsBtn) commentsBtn.classList.add('active');
     initializeTags(containerEl);
     loadTagsForTask(task.id, containerEl);
     initializeFileUpload(containerEl, task.id);
 }
-//заполнение данных задачи из бд
+
+
 function fillTaskModalData(containerEl, task) {
     containerEl.querySelector('.task-key-info span').textContent = task.taskKey;
     containerEl.querySelector('.task-title-modal').textContent = task.title;
@@ -569,11 +106,33 @@ function fillTaskModalData(containerEl, task) {
 }
 // кнопка закрытия окна
 function setupCloseModal(containerEl) {
-    containerEl.querySelector('.close-modal').addEventListener('click', () => {
-        tinymce.remove();
+    const closeBtn = containerEl.querySelector('.close-modal');
+    if (!closeBtn) return;
+
+    closeBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        console.log('Close modal clicked, preventing default.');
+
+        if (typeof tinymce !== 'undefined') {
+            tinymce.remove();
+        }
+
         containerEl.innerHTML = '';
+        containerEl.removeAttribute('data-task-id');
+
+        // Откат истории — убираем `&task=...` из адреса
+        if (history.state && history.state.modalOpen) {
+            history.back();
+        } else {
+            // fallback: на случай, если нет состояния
+            const returnUrl = containerEl.getAttribute('data-return-url');
+            if (returnUrl) {
+                window.location.href = returnUrl;
+            }
+        }
     });
 }
+
 // переключение комментариев и истории
 function setupSectionSwitching(containerEl) {
     containerEl.querySelectorAll('.action-nav button').forEach(button => {
@@ -1691,145 +1250,3 @@ function loadTaskHistory(taskId) {
             console.error('Ошибка при загрузке истории:', error);
         });
 }
-
-// Завершение спринта
-const overlay = document.querySelector('.modal-complete-sprint-overlay');
-const summaryBlock = document.querySelector('.modal-complete-sprint-summary');
-const sprintSelect = document.getElementById('modal-complete-sprint-select');
-const doneCountSpan = document.querySelector('.modal-complete-sprint-done-count');
-const openCountSpan = document.querySelector('.modal-complete-sprint-open-count');
-const taskListContainer = document.querySelector('.modal-complete-sprint-task-list');
-
-let selectedSprintId = null;
-
-// Открытие модального окна и загрузка спринтов
-async function openCompleteSprintModal() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const projectId = urlParams.get('id');
-
-    try {
-        const response = await fetch(`/api/sprint/active/${projectId}`);
-        if (!response.ok) throw new Error('Не удалось получить список активных спринтов');
-
-        const sprints = await response.json();
-        console.log(sprints)
-        // Очистим селект
-        sprintSelect.innerHTML = `<option value="">-- Выберите спринт --</option>`;
-
-        // Заполним опции
-        sprints.forEach(sprint => {
-            const option = document.createElement('option');
-            option.value = sprint.id;
-            option.textContent = sprint.sprintName;
-            sprintSelect.appendChild(option);
-        });
-
-        // Открыть модалку
-        overlay.classList.remove('hidden');
-        summaryBlock.classList.add('hidden'); // скрыть сводку до выбора
-    } catch (err) {
-        console.error('Ошибка при загрузке спринтов:', err);
-    }
-}
-
-// Слушатель на выбор спринта
-sprintSelect.addEventListener('change', async (event) => {
-    const sprintId = event.target.value;
-    if (!sprintId) {
-        summaryBlock.classList.add('hidden');
-        return;
-    }
-
-    selectedSprintId = sprintId;
-
-    try {
-        const response = await fetch(`/api/sprint/${sprintId}/summary`);
-        if (!response.ok) throw new Error('Не удалось получить данные спринта');
-
-        const data = await response.json(); // { doneCount, openCount, openTasks: [{id, key, title, type}] }
-
-        // Обновим данные
-        doneCountSpan.textContent = data.doneCount;
-        openCountSpan.textContent = data.openCount;
-
-        // Очистим задачи и вставим новые
-        taskListContainer.innerHTML = `
-            <div class="select-all-wrapper">
-                <input type="checkbox" class="modal-complete-sprint-select-all">
-                <span>Выбрать все</span>
-            </div>
-        `;
-        const selectAllCheckbox = taskListContainer.querySelector('.modal-complete-sprint-select-all');
-        selectAllCheckbox.addEventListener('change', function () {
-            const isChecked = this.checked;
-            document.querySelectorAll('.modal-complete-sprint-task-checkbox').forEach(cb => {
-                cb.checked = isChecked;
-            });
-        });
-        data.openTasks.forEach(task => {
-            const typeIcon = task.taskType === 'task' ? 'tusk': task.taskType === 'story' ? 'history': task.taskType;
-            console.log(task);
-            const taskItem = document.createElement('div');
-            taskItem.classList.add('modal-complete-sprint-task-item');
-            taskItem.innerHTML = `
-                <div class="finish-task-wrapper">
-                    <input type="checkbox" class="modal-complete-sprint-task-checkbox" data-task-id="${task.id}">
-                    <div class="modal-complete-sprint-task-box">
-                        <img src="icons/${typeIcon}.svg" class="modal-complete-sprint-task-icon" alt="${task.taskType}">
-                        <span class="modal-complete-sprint-task-key">${task.taskKey}</span>
-                        <span class="modal-complete-sprint-task-title">${task.title}</span>
-                    </div>
-                </div>
-            `;
-            taskListContainer.appendChild(taskItem);
-        });
-
-        // Показать блок сводки
-        summaryBlock.classList.remove('hidden');
-    } catch (err) {
-        console.error('Ошибка при получении информации о спринте:', err);
-    }
-});
-
-// Подключи кнопку "Завершить спринт"
-document.querySelector('.modal-complete-sprint-confirm').addEventListener('click', async () => {
-    if (!selectedSprintId) return;
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const projectId = urlParams.get('id');
-
-    // Собираем ID отмеченных задач
-    const selectedCheckboxes = document.querySelectorAll('.modal-complete-sprint-task-checkbox:checked');
-    const selectedTaskIds = Array.from(selectedCheckboxes).map(cb => cb.dataset.taskId);
-
-    try {
-        const response = await fetch(`/api/sprint/${selectedSprintId}/complete`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ taskIds: selectedTaskIds }) // Отправляем массив
-        });
-
-        if (!response.ok) throw new Error('Не удалось завершить спринт');
-
-        window.location.href = `/project_page?id=${projectId}&section=backlog`;
-    } catch (err) {
-        console.error('Ошибка при завершении спринта:', err);
-    }
-});
-// Кнопка отмены
-document.querySelector('.modal-complete-sprint-cancel').addEventListener('click', () => {
-    overlay.classList.add('hidden');
-});
-
-
-
-
-
-
-
-
-
-
-

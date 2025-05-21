@@ -26,5 +26,6 @@ public interface UserService {
         List<UserEntity> getUsersByProjectTasks(Long projectId);
         List<UserDTO> getUsersWithTasksByProjectId(Long projectId);
         UserDTO getUserWithTasks(Long userId, Long projectId);
+        List<UserEntity> getUsersForProject(Long projectId);
 
 }

@@ -18,9 +18,11 @@ public interface UserRepository extends JpaRepository<UserEntity,Long> {
    List<UserEntity> findAllByEmailIn(List<String> emails);
    Optional<UserEntity> findByConfirmationToken(String token);
    @Query("""
-        SELECT DISTINCT t.executor 
-        FROM TaskEntity t 
-        WHERE t.executor IS NOT NULL AND t.sprint.project.id = :projectId
-    """)
+    SELECT DISTINCT u
+    FROM ProjectEntity p
+    JOIN p.users u
+    LEFT JOIN TaskEntity t ON t.executor = u AND t.sprint.project.id = :projectId
+    WHERE p.id = :projectId
+""")
    List<UserEntity> findDistinctByTasksSprintProjectId(@Param("projectId") Long projectId);
 }

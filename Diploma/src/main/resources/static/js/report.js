@@ -4,6 +4,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
     loadFilters(projectId);
     setupEventListeners();
+
+    document.querySelectorAll('.report-table').forEach(table => {
+        table.addEventListener('click', event => {
+            const cell = event.target.closest('.task-key-cell');
+            if (cell) {
+                const taskKey = cell.textContent.trim();
+
+                // Загружаем задачу по ключу и открываем модальное окно
+                fetch(`/api/tasks/by-key/${encodeURIComponent(taskKey)}`)
+                    .then(res => {
+                        if (!res.ok) {
+                            throw new Error('Ошибка загрузки задачи');
+                        }
+                        return res.json();
+                    })
+                    .then(task => {
+                        openTaskModal(task);
+                    })
+                    .catch(error => {
+                        console.error('Не удалось открыть задачу:', error);
+                    });
+            }
+        });
+    });
 });
 
 function getProjectIdFromUrl() {
@@ -805,7 +829,7 @@ function renderUserReport(user) {
 
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${task.taskKey}</td>
+            <td class="task-key-cell">${task.taskKey}</td>
             <td>${task.title}</td>
             <td>
                 <div class="td-status">
@@ -840,7 +864,7 @@ function renderSprintReport(sprint) {
 
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${task.taskKey}</td>
+            <td class="task-key-cell">${task.taskKey}</td>
             <td>${task.title}</td>
             <td>
                 <div class="td-status">
@@ -872,3 +896,4 @@ function capitalize(str) {
     if (!str || typeof str !== 'string') return '';
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
+

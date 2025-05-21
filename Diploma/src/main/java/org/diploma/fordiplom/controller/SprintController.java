@@ -68,6 +68,11 @@ public class SprintController {
         return sprintService.getSprintSummary(sprintId);
     }
 
+    @GetMapping("/api/projects/{projectId}/sprints/active")
+    public ResponseEntity<List<SprintDTO>> getActiveSprints(@PathVariable Long projectId) {
+        List<SprintDTO> activeSprints = sprintService.getActiveSprintsByProject(projectId);
+        return ResponseEntity.ok(activeSprints);
+    }
 
 }
 
