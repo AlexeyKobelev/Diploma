@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -18,7 +19,6 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name="project")
-
 public class ProjectEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,6 +34,12 @@ public class ProjectEntity {
     @Column(name = "description")
     private String description;
 
+    @Column(name = "created_at", updatable = false)
+    private LocalDate createdAt;
+
+    @Column(name = "is_deleted")
+    private Boolean isDeleted = false;
+
     @ManyToMany
     @JsonIgnore
     @JoinTable(
@@ -42,4 +48,15 @@ public class ProjectEntity {
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
     private Set<UserEntity> users = new HashSet<>();
+    @ManyToMany
+    @JsonIgnore
+    @JoinTable(
+            name = "project_team",
+            joinColumns = @JoinColumn(name = "project_id"),
+            inverseJoinColumns = @JoinColumn(name = "team_id")
+    )
+    private Set<TeamEntity> teams = new HashSet<>();
+    public void addUsersFromTeam(TeamEntity team) {
+        this.users.addAll(team.getEmails());
+    }
 }

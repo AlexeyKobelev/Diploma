@@ -1,8 +1,6 @@
 package org.diploma.fordiplom.entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jdk.jfr.Name;
 import lombok.AllArgsConstructor;
@@ -37,10 +35,15 @@ public class UserEntity {
     private String organization;
     @Column(name = "username")
     private String username;
+    @Column(name = "userImgPath")
+    private String userImgPath;
     @Transient
     private String confirmPassword;
+    @Column(name = "enabled")
+    private Boolean enabled;
+    @Column(name = "confirmation_token")
+    private String confirmationToken;
     @ManyToMany(mappedBy = "emails")
-//    @JsonBackReference
     @JsonIgnore
     private Set<TeamEntity> teams = new HashSet<>();
     @ManyToMany(mappedBy = "users")

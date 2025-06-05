@@ -126,4 +126,14 @@ public class TeamController {
             return ResponseEntity.status(500).body("Ошибка при удалении команды");
         }
     }
+    @GetMapping("/api/teams/search")
+    public ResponseEntity<List<TeamEntity>> searchTeams(@RequestParam String query) {
+        List<TeamEntity> teams = teamService.searchTeams(query);
+        return ResponseEntity.ok(teams);  // Возвращаем найденные команды
+    }
+    @GetMapping("/api/teams/{projectId}/users")
+    public ResponseEntity<List<UserEntity>> getUsersForTeam(@PathVariable Long projectId) {
+        List<UserEntity> users = userService.getUsersForProject(projectId);
+        return ResponseEntity.ok(users); // Возвращаем список пользователей
+    }
 }

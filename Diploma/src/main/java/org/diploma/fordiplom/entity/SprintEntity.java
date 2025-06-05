@@ -45,8 +45,11 @@ public class SprintEntity {
 
     @Column(name = "duration")
     private Integer duration;
-
-    @ManyToOne(fetch = FetchType.LAZY)
+    @Column(name = "is_active")
+    private Boolean isActive;
+    @Column(name = "is_completed")
+    private Boolean isCompleted = false;
+    @ManyToOne(fetch = FetchType.EAGER)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "project_id")
 //    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})

@@ -1,6 +1,7 @@
 package org.diploma.fordiplom.entity.DTO.request;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
 
@@ -11,6 +12,18 @@ public class SprintRequest {
     private String goal;
     private Integer duration;
     private Long projectId;
+    private boolean isActive;
+
+//    public SprintRequest(Long id, String sprintName, Boolean isActive) {
+//    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
+    }
 
     public Long getProjectId() {
         return projectId;
